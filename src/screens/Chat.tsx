@@ -71,14 +71,7 @@ export const Chat = ({
                 console.log('update')
 
                 setTimeout(() => {
-                    console.log(msgStore[route.params.channelId])
                     setMessages(v => msgStore[route.params.channelId])
-                    flatListRef.current.forceUpdate(() => {
-                        flatListRef.current.scrollToIndex({
-                            animated: true,
-                            index: 0
-                        })
-                    })
                 }, 100)
             }
         })
