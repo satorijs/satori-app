@@ -1,3 +1,4 @@
+import { Alert } from 'react-native'
 import { ConnectionInfo } from './connection'
 import Element from './element'
 import { Dict } from 'cosmokit'
@@ -209,6 +210,11 @@ const fixArrays = (obj: object) => {
     }
 }
 
+const satoriError = (message: string) => {
+    Alert.alert('Satori Error', message)
+    // throw new Error(message)
+}
+
 /*
 HTTP API
 这是一套 HTTP RPC 风格的 API，所有 URL 的形式均为 /{path}/{version}/{resource}.{method}。其中，path 为部署路径 (可以为空)，version 为 API 的版本号，resource 是资源类型，method 为方法名。
@@ -234,11 +240,11 @@ export const callMethodAsync = (method: string, args: object, connectionInfo: Co
     // Verify fields
     const methodInfo = Methods[method]
     if (!methodInfo) {
-        throw new Error(`Unknown method ${method}`)
+        satoriError(`Unknown method ${method}`)
     }
     for (const key in args) {
         if (!methodInfo.fields.some(field => field.name === key)) {
-            throw new Error(`Redundant field ${key} in args`)
+            satoriError(`Redundant field ${key} in args`)
         }
     }
 
@@ -256,7 +262,7 @@ export const callMethodAsync = (method: string, args: object, connectionInfo: Co
     console.log('call satori', method)
     return fetch(url, { method: 'POST', headers, body }).then(res => {
         if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText} (${httpCodeTips[res.status]})`)
+            satoriError(`HTTP ${res.status}: ${res.statusText} (${httpCodeTips[res.status]})`)
         }
         return res.text()
     }).then(v => {
@@ -264,7 +270,7 @@ export const callMethodAsync = (method: string, args: object, connectionInfo: Co
             console.log(method, '=> response', v)
             return fixArrays(convertSnakeObjectToCamel(JSON.parse(v)))
         } catch (e) {
-            throw new Error(`Failed to parse response: ${v}`)
+            satoriError(`Failed to parse response: ${v}`)
         }
     })
 }

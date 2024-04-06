@@ -11,6 +11,7 @@ import { elementRendererMap, renderElement, elementToObject, toPreviewString } f
 import React from "react"
 import Clipboard from "@react-native-clipboard/clipboard"
 import { create } from "zustand"
+import Animated, { Easing, FadeIn, Keyframe, LinearTransition, useSharedValue, withTiming } from "react-native-reanimated"
 
 const useReplyTo = create<{
     replyTo: SaMessage | null,
@@ -23,7 +24,7 @@ const useReplyTo = create<{
 const Message = memo(({ message }: { message: SaMessage }) => {
     const content = useMemo(() => Element.parse(message.content).map(elementToObject), [message]);
     const login = useLogin()
-    const isSelf = login.selfId === message.user?.id
+    const isSelf = login?.selfId === message.user?.id
     const [menuVisible, setMenuVisible] = useState(false)
     const [menuAnchor, setMenuAnchor] = useState<{
         x: number,
@@ -34,81 +35,104 @@ const Message = memo(({ message }: { message: SaMessage }) => {
 
     const { setReplyTo } = useReplyTo()
 
-    return <TouchableRipple style={{
-        marginVertical: 10,
-        alignItems: isSelf ? 'flex-end' : 'baseline'
-    }} onPress={e => {
-        setMenuAnchor({
-            x: e.nativeEvent.pageX,
-            y: e.nativeEvent.pageY
-        })
-        setMenuVisible(true)
+    const animMaxHeight = useSharedValue(0);
+
+    useEffect(() => {
+        if ((Date.now() - message.timestamp * 1000) < 1000) {
+            animMaxHeight.value = withTiming(500, {
+                duration: 300,
+                easing: Easing.linear
+            })
+
+            setTimeout(() => {
+                animMaxHeight.value = 2000
+            }, 1000)
+        }
+        else
+            animMaxHeight.value = 2000
+    }, [message])
+
+    return <Animated.View style={{
+        //            height: 20
+        maxHeight: animMaxHeight,
+        overflow: 'visible'
     }}>
-        <>
+        <TouchableRipple style={{
+            marginVertical: 10,
+            alignItems: isSelf ? 'flex-end' : 'baseline',
+            height: 'auto'
+        }} onPress={e => {
+            setMenuAnchor({
+                x: e.nativeEvent.pageX,
+                y: e.nativeEvent.pageY
+            })
+            setMenuVisible(true)
+        }}>
+            <>
+                <View style={{
+                    flexDirection: isSelf ? 'row-reverse' : 'row',
+                    gap: 10,
+                }}>
+                    {message.user ? <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
+                        <Text>{message.user.name ?? message.user.id}</Text></> : <Text>Unknown user</Text>}
+                </View>
+                <Card style={{
+                    marginVertical: 8,
+                    paddingHorizontal: 15,
+                    padding: 10,
+                    borderRadius: 20
+                }}>
+                    {
+                        content.map(renderElement)
+                    }
+                </Card>
 
-            <View style={{
-                flexDirection: isSelf ? 'row-reverse' : 'row',
-                gap: 10,
-            }}>
-                {message.user ? <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
-                    <Text>{message.user.name ?? message.user.id}</Text></> : <Text>Unknown user</Text>}
-            </View>
-            <Card style={{
-                marginVertical: 8,
-                paddingHorizontal: 15,
-                padding: 10,
-                borderRadius: 20
-            }}>
-                {
-                    content.map(renderElement)
-                }
-            </Card>
+                <Menu
+                    anchor={menuAnchor}
+                    visible={menuVisible}
+                    onDismiss={() => setMenuVisible(false)}
+                >
+                    <Menu.Item onPress={async () => {
+                        setMenuVisible(false)
 
-            <Menu
-                anchor={menuAnchor}
-                visible={menuVisible}
-                onDismiss={() => setMenuVisible(false)}
-            >
-                <Menu.Item onPress={async () => {
-                    setMenuVisible(false)
+                        await satori.bot.createMessage(message.channel.id, message.content, message.guild.id)
+                    }} title="+1" />
+                    <Menu.Item onPress={() => {
+                        setMenuVisible(false)
 
-                    await satori.bot.createMessage(message.channel.id, message.content, message.guild.id)
-                }} title="+1" />
-                <Menu.Item onPress={() => {
-                    setMenuVisible(false)
+                        const content = Element.parse(message.content)
+                        const text = content.map(v => v.attrs?.text).filter(v => v).join(' ')
 
-                    const content = Element.parse(message.content)
-                    const text = content.map(v => v.attrs?.text).filter(v => v).join(' ')
+                        Clipboard.setString(text)
+                        ToastAndroid.show('已复制', ToastAndroid.SHORT)
+                    }} title="复制" />
+                    <Menu.Item onPress={() => {
+                        setMenuVisible(false)
 
-                    Clipboard.setString(text)
-                    ToastAndroid.show('已复制', ToastAndroid.SHORT)
-                }} title="复制" />
-                <Menu.Item onPress={() => {
-                    setMenuVisible(false)
+                        setMsgStore(msgStore => {
+                            msgStore[message.channel.id] = msgStore[message.channel.id].filter(v => v.id !== message.id)
+                            return { ...msgStore }
+                        })
 
-                    setMsgStore(msgStore => {
-                        msgStore[message.channel.id] = msgStore[message.channel.id].filter(v => v.id !== message.id)
-                        return { ...msgStore }
-                    })
+                        ToastAndroid.show('已删除', ToastAndroid.SHORT)
+                    }} title="删除" />
+                    <Menu.Item onPress={() => {
+                        setMenuVisible(false)
 
-                    ToastAndroid.show('已删除', ToastAndroid.SHORT)
-                }} title="删除" />
-                <Menu.Item onPress={() => {
-                    setMenuVisible(false)
-
-                    setReplyTo(message)
-                }} title="回复" />
-                <Menu.Item onPress={() => {
-                    setMenuVisible(false)
-                    const inspect = v => JSON.stringify(v, null, 4)
-                    Alert.alert('消息信息',
-                        `Sender ${inspect(message.user)}
+                        setReplyTo(message)
+                    }} title="回复" />
+                    <Menu.Item onPress={() => {
+                        setMenuVisible(false)
+                        const inspect = v => JSON.stringify(v, null, 4)
+                        Alert.alert('消息信息',
+                            `Sender ${inspect(message.user)}
         Channel ${inspect(message.channel)}
         Content ${inspect(content)}`)
-                }} title="详细信息" />
-            </Menu>
-        </>
-    </TouchableRipple>
+                    }} title="详细信息" />
+                </Menu>
+            </>
+        </TouchableRipple >
+    </Animated.View>
 })
 
 export const Chat = ({
