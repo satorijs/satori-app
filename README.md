@@ -1,5 +1,6 @@
-### 此项目仍在施工中，不建议立即使用
-
+> [!WARNING] 
+This project is in a very early stage and is not ready for production. Use at your own risk.  
+此项目仍非常早期，不建议实际使用。
 
 <div align=center>
 <h1>Satori App</h1>
