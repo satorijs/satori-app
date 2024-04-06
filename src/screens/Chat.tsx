@@ -1,6 +1,6 @@
 import { NavigationProp, RouteProp } from "@react-navigation/native"
 import { StackParamList } from "../globals/navigator"
-import { Alert, FlatList, View } from "react-native"
+import { Alert, FlatList, ToastAndroid, View } from "react-native"
 import { ActivityIndicator, Avatar, Card, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
 import { memo, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
 import { useLogin, useSatori } from "../globals/satori"
@@ -9,6 +9,7 @@ import Element from "../satori/element"
 import { useMessageStore } from "../globals/message"
 import { elementRendererMap, renderElement, elementToObject } from "../components/elements/elements"
 import React from "react"
+import Clipboard from "@react-native-clipboard/clipboard"
 
 const Message = memo(({ message }: { message: SaMessage }) => {
     const content = useMemo(() => Element.parse(message.content).map(elementToObject), [message]);
@@ -20,6 +21,7 @@ const Message = memo(({ message }: { message: SaMessage }) => {
         y: number
     } | null>(null)
     const [msgStore, setMsgStore] = useMessageStore()
+    const satori = useSatori()
 
     return <TouchableRipple style={{
         marginVertical: 10,
@@ -56,14 +58,19 @@ const Message = memo(({ message }: { message: SaMessage }) => {
                 visible={menuVisible}
                 onDismiss={() => setMenuVisible(false)}
             >
+                <Menu.Item onPress={async () => {
+                    setMenuVisible(false)
+
+                    await satori.bot.createMessage(message.channel.id, message.content, message.guild.id)
+                }} title="+1" />
                 <Menu.Item onPress={() => {
                     setMenuVisible(false)
-                }} title="回复" />
-                <Menu.Item onPress={() => {
-                    setMenuVisible(false)
-                }} title="引用" />
-                <Menu.Item onPress={() => {
-                    setMenuVisible(false)
+
+                    const content = Element.parse(message.content)
+                    const text = content.map(v => v.attrs?.text).filter(v => v).join(' ')
+
+                    Clipboard.setString(text)
+                    ToastAndroid.show('已复制', ToastAndroid.SHORT)
                 }} title="复制" />
                 <Menu.Item onPress={() => {
                     setMenuVisible(false)
@@ -72,6 +79,8 @@ const Message = memo(({ message }: { message: SaMessage }) => {
                         msgStore[message.channel.id] = msgStore[message.channel.id].filter(v => v.id !== message.id)
                         return { ...msgStore }
                     })
+
+                    ToastAndroid.show('已删除', ToastAndroid.SHORT)
                 }} title="删除" />
                 <Menu.Item onPress={() => {
                     setMenuVisible(false)

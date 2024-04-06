@@ -1570,6 +1570,11 @@
   resolved "https://registry.yarnpkg.com/@react-native-camera-roll/camera-roll/-/camera-roll-7.5.2.tgz#2b248a835fbb8b53d04fc0c2957adba1474d9c99"
   integrity sha512-XiVIrW17EFXrFzqB48q6cQOaYeVnw0iC3tH+Jhl+MAHDYGLJp+ulzxCNNwngaMvnVAA5Q2mUMzRocUiJPy8q0g==
 
+"@react-native-clipboard/clipboard@^1.14.0":
+  version "1.14.0"
+  resolved "https://registry.yarnpkg.com/@react-native-clipboard/clipboard/-/clipboard-1.14.0.tgz#ae3b7b59f51b1da1fc6a362244c18ddec113d1f6"
+  integrity sha512-kDLfA6HzP4T+kfGTEGdbsc2r4q0xQALshRQp8Ph/5YD5qT4CZdgkQM3oloKHIdh+AVks+QjtVHK1cZ1xb0Or7w==
+
 "@react-native-community/cli-clean@12.3.6":
   version "12.3.6"
   resolved "https://registry.yarnpkg.com/@react-native-community/cli-clean/-/cli-clean-12.3.6.tgz#e8a7910bebc97266fd5068649013a03958021fc4"
