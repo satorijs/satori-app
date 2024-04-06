@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Image, Modal, PermissionsAndroid, Platform } from "react-native"
 import { Card, TouchableRipple } from "react-native-paper"
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll'
+import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 
 
 async function hasAndroidPermission() {
@@ -66,12 +67,13 @@ export const Img = ({ src }) => {
                 console.log(e.nativeEvent.source.width * scale, e.nativeEvent.source.height * scale)
             }} />
         </TouchableRipple>
-        <Modal visible={visible}>
+        <Modal visible={visible} transparent>
             <ImageViewer imageUrls={[{ url: src }]}
                 onCancel={() => setIsVisible(false)}
                 onSwipeDown={() => setIsVisible(false)}
                 onClick={() => setIsVisible(false)}
                 enableSwipeDown={true}
+                backgroundColor="#00000099"
                 menuContext={{ "saveToLocal": "保存图片", "cancel": "取消" }}
                 onSave={async e => {
                     if (Platform.OS === "android" && !(await hasAndroidPermission())) {

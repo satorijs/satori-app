@@ -125,9 +125,11 @@ const Message = memo(({ message }: { message: SaMessage }) => {
                         setMenuVisible(false)
                         const inspect = v => JSON.stringify(v, null, 4)
                         Alert.alert('消息信息',
-                            `Sender ${inspect(message.user)}
-        Channel ${inspect(message.channel)}
-        Content ${inspect(content)}`)
+`
+ID ${message.id}
+Sender ${inspect(message.user)}
+Channel ${inspect(message.channel)}
+Content ${inspect(content)}`)
                     }} title="详细信息" />
                 </Menu>
             </>
@@ -226,6 +228,9 @@ export const Chat = ({
             }} title="清除当前聊天数据" />
         </Menu>
         <FlatList
+            removeClippedSubviews
+            maxToRenderPerBatch={5}
+            windowSize={8}
             ref={flatListRef}
             data={[...messages].reverse()}
             inverted
