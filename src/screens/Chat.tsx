@@ -1,15 +1,24 @@
 import { NavigationProp, RouteProp } from "@react-navigation/native"
 import { StackParamList } from "../globals/navigator"
 import { Alert, FlatList, ToastAndroid, View } from "react-native"
-import { ActivityIndicator, Avatar, Card, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
+import { ActivityIndicator, Avatar, Card, Chip, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
 import { memo, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
 import { useLogin, useSatori } from "../globals/satori"
 import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage } from "../satori/protocol"
 import Element from "../satori/element"
 import { useMessageStore } from "../globals/message"
-import { elementRendererMap, renderElement, elementToObject } from "../components/elements/elements"
+import { elementRendererMap, renderElement, elementToObject, toPreviewString } from "../components/elements/elements"
 import React from "react"
 import Clipboard from "@react-native-clipboard/clipboard"
+import { create } from "zustand"
+
+const useReplyTo = create<{
+    replyTo: SaMessage | null,
+    setReplyTo: (replyTo: SaMessage | null) => void
+}>(set => ({
+    replyTo: null,
+    setReplyTo: replyTo => set({ replyTo })
+}))
 
 const Message = memo(({ message }: { message: SaMessage }) => {
     const content = useMemo(() => Element.parse(message.content).map(elementToObject), [message]);
@@ -22,6 +31,8 @@ const Message = memo(({ message }: { message: SaMessage }) => {
     } | null>(null)
     const [msgStore, setMsgStore] = useMessageStore()
     const satori = useSatori()
+
+    const { setReplyTo } = useReplyTo()
 
     return <TouchableRipple style={{
         marginVertical: 10,
@@ -84,6 +95,11 @@ const Message = memo(({ message }: { message: SaMessage }) => {
                 }} title="删除" />
                 <Menu.Item onPress={() => {
                     setMenuVisible(false)
+
+                    setReplyTo(message)
+                }} title="回复" />
+                <Menu.Item onPress={() => {
+                    setMenuVisible(false)
                     const inspect = v => JSON.stringify(v, null, 4)
                     Alert.alert('消息信息',
                         `Sender ${inspect(message.user)}
@@ -116,6 +132,8 @@ export const Chat = ({
 
     const [menuMessage, setMenuMessage] = useState<SaMessage | null>(null)
     const [channelMenuVisible, setChannelMenuVisible] = useState(false)
+
+    const { replyTo, setReplyTo } = useReplyTo()
 
     useEffect(() => {
         if (!satori) return;
@@ -194,22 +212,71 @@ export const Chat = ({
         />
 
         <View style={{
-            flexDirection: 'row',
-            height: 40
+            flexDirection: 'column',
+            height: 'auto'
         }}>
-            <TextInput multiline value={currentInput} onChangeText={v => setCurrentInput(v)} mode='flat' style={{ backgroundColor: 'transparent', flex: 1 }} />
-            <IconButton
-                icon='send'
-                mode="contained"
-                disabled={false && currentInput === ''}
-                onPress={async () => {
-                    //setSendingMessage(true)
-                    setCurrentInput('')
-                    await satori.bot.createMessage(route.params.channelId, currentInput, route.params.guildId)
-                    //setSendingMessage(false)
-                }}
-                loading={sendingMessage}
-            />
+            {
+                replyTo && <View style={{
+                    flexDirection: 'row',
+                    height: 70,
+                    marginTop: 10
+                }}>
+                    <Card style={{
+                        borderRadius: 20,
+                        flexDirection: 'column'
+                    }} onPress={() => setReplyTo(null)} mode="contained">
+                        <View style={{
+                            paddingTop: 15,
+                            paddingHorizontal: 15
+                        }}>
+                            <View style={{
+                                flexDirection: 'row',
+                                gap: 10
+                            }}>
+                                <Icon source='reply' size={20} />
+                                <Avatar.Image source={{ uri: replyTo.user?.avatar }} size={20} />
+                                <Text>{replyTo.user?.name ?? replyTo.user?.id}</Text>
+                            </View>
+
+                            <Text>{toPreviewString(replyTo.content)}</Text>
+                        </View>
+                    </Card>
+
+                </View>
+            }
+
+            <View style={{
+                flexDirection: 'row',
+                height: "auto"
+            }}>
+                <TextInput multiline value={currentInput} onChangeText={v => setCurrentInput(v)} mode='flat' style={{ backgroundColor: 'transparent', flex: 1 }} />
+                <IconButton
+                    icon='send'
+                    mode="contained"
+                    disabled={false && currentInput === ''}
+                    onPress={async () => {
+                        //setSendingMessage(true)
+                        let elems = [Element.text(currentInput)]
+                        if (replyTo) {
+                            elems.unshift(Element.quote(replyTo.id))
+                            setReplyTo(null)
+                        }
+
+                        console.log('sendMsg', elems)
+
+                        satori.bot.createMessage(route.params.channelId,
+                            elems.map(v => v.toString(true)).join(''),
+                            route.params.guildId)
+                            .catch(e => {
+                                Alert.alert('发送失败', e.message)
+                            })
+
+                        setCurrentInput('')
+                        //setSendingMessage(false)
+                    }}
+                    loading={sendingMessage}
+                />
+            </View>
         </View>
     </View>
 }
