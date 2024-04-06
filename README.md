@@ -10,7 +10,7 @@ Satori 是一个通用的聊天软件，基于 <a href="https://satori.js.org/zh
 ## 界面展示
 
 <div align=center>
-<img src=https://github.com/MicroCBer/satori-app/assets/66859419/96460e7c-0606-42e7-91e7-9bf9965664d6 width=300/>
-<img src=https://github.com/MicroCBer/satori-app/assets/66859419/eb7cc59e-e1c1-458a-92b4-d07c8985eee9 width=300/>
-<img src=https://github.com/MicroCBer/satori-app/assets/66859419/1a7d266d-baad-4c34-ab22-2ddf42ead9a3 width=300/>
+<img src=https://github.com/MicroCBer/satori-app/assets/66859419/96460e7c-0606-42e7-91e7-9bf9965664d6 width=250/>
+<img src=https://github.com/MicroCBer/satori-app/assets/66859419/eb7cc59e-e1c1-458a-92b4-d07c8985eee9 width=250/>
+<img src=https://github.com/MicroCBer/satori-app/assets/66859419/1a7d266d-baad-4c34-ab22-2ddf42ead9a3 width=250/>
 </div>
