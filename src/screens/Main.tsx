@@ -22,13 +22,7 @@ export const Main = ({ navigation }: {
     const [msgStore, setMsgStore] = useMessageStore()
 
     const sortedGuilds = useMemo(() => {
-        return guilds.data.map(v => [v, msgStore?.[v.id]?.reduce((pre, cur) => {
-            if (pre.timestamp < cur.timestamp) return cur;
-            return pre;
-        }, {
-            timestamp: -1,
-            content: '',
-        }) ?? {
+        return guilds.data.map(v => [v, msgStore?.[v.id]?.[msgStore?.[v.id]?.length - 1] ?? {
             timestamp: -1,
             content: '',
         }])

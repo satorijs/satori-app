@@ -258,11 +258,21 @@ export const Chat = ({
                         //setSendingMessage(true)
                         let elems = [Element.text(currentInput)]
                         if (replyTo) {
-                            elems.unshift(Element.quote(replyTo.id))
+                            elems.unshift(Element.jsx('quote', {
+                                id: replyTo.id,
+                                'chronocat:seq': replyTo.id
+                            }, [
+                                Element.jsx('author', {
+                                    id: replyTo.user?.id,
+                                    name: replyTo.user?.name ?? replyTo.user?.id,
+                                    avatar: replyTo.user?.avatar
+                                }),
+                                ...Element.parse(replyTo.content)
+                            ]))
                             setReplyTo(null)
                         }
 
-                        console.log('sendMsg', elems)
+                        console.log('sendMsg', JSON.stringify(elems, null, 4), elems.map(v => v.toString()).join(''))
 
                         satori.bot.createMessage(route.params.channelId,
                             elems.map(v => v.toString(true)).join(''),

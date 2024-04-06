@@ -30,5 +30,6 @@ export const toPreviewString = (v: string | any) =>
         if (v.type === 'text') return v.attrs?.content?.replaceAll('\n', ' ') ?? v.content;
         if (v.type === 'quote') return `[回复]`
         if (v.type === 'img') return '[图片]'
-        return '未知'
+        if (v.type === 'at') return `@${v.name ?? v.id}`
+        return '[未知]'
     }).join(' ')
