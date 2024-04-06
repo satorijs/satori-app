@@ -7,13 +7,7 @@ import { Event, Guild, List } from "../satori/protocol"
 import { StackParamList } from "../globals/navigator"
 import { useMessageStore } from "../globals/message"
 import Element from "../satori/element"
-
-const toPreviewString = (v: string) => Element.parse(v).map(v => {
-    if (v.type === 'text') return v.attrs.content.replaceAll('\n', ' ');
-    if (v.type === 'quote') return `[回复]`
-    if (v.type === 'img') return '[图片]'
-    return '未知'
-}).join(' ')
+import { toPreviewString } from "../components/elements/elements"
 
 export const Main = ({ navigation }: {
     navigation: NavigationProp<StackParamList>
@@ -33,10 +27,10 @@ export const Main = ({ navigation }: {
             return pre;
         }, {
             timestamp: -1,
-            content: v.id,
+            content: '',
         }) ?? {
             timestamp: -1,
-            content: v.id,
+            content: '',
         }])
             .sort((a, b) => b[1].timestamp - a[1].timestamp)
     }, [guilds, msgStore])
@@ -69,7 +63,7 @@ export const Main = ({ navigation }: {
         marginVertical: 30,
         flex: 1
     }}>
-        <Text>你好，</Text>
+        <Text>你好</Text>
         <View style={{
             flexDirection: 'row',
             alignItems: 'center',

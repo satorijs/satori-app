@@ -1,6 +1,6 @@
 import { View } from "react-native"
 import { Avatar, Card, Text } from "react-native-paper"
-import { renderElement } from "./elements"
+import { renderElement, toPreviewString } from "./elements"
 
 export const Quote = ({ child }) => {
     return <Card mode="contained" style={{
@@ -14,6 +14,6 @@ export const Quote = ({ child }) => {
             <Text style={{ opacity: 0.7 }}>{child[0].name ?? child[0].id}</Text>
         </View>
 
-        {child.slice(1).map(renderElement)}
+        <Text>{child.slice(1).map(toPreviewString).join(' ')}</Text>
     </Card>
 }

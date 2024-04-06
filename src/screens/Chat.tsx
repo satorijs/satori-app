@@ -1,9 +1,9 @@
 import { NavigationProp, RouteProp } from "@react-navigation/native"
 import { StackParamList } from "../globals/navigator"
 import { Alert, FlatList, View } from "react-native"
-import { ActivityIndicator, Avatar, Card, Icon, IconButton, MD3Colors, Text, TextInput } from "react-native-paper"
+import { ActivityIndicator, Avatar, Card, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
 import { memo, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
-import { useSatori } from "../globals/satori"
+import { useLogin, useSatori } from "../globals/satori"
 import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage } from "../satori/protocol"
 import Element from "../satori/element"
 import { useMessageStore } from "../globals/message"
@@ -12,29 +12,78 @@ import React from "react"
 
 const Message = memo(({ message }: { message: SaMessage }) => {
     const content = useMemo(() => Element.parse(message.content).map(elementToObject), [message]);
+    const login = useLogin()
+    const isSelf = login.selfId === message.user?.id
+    const [menuVisible, setMenuVisible] = useState(false)
+    const [menuAnchor, setMenuAnchor] = useState<{
+        x: number,
+        y: number
+    } | null>(null)
+    const [msgStore, setMsgStore] = useMessageStore()
 
-    return <View style={{
-        marginVertical: 10
+    return <TouchableRipple style={{
+        marginVertical: 10,
+        alignItems: isSelf ? 'flex-end' : 'baseline'
+    }} onPress={e => {
+        setMenuAnchor({
+            x: e.nativeEvent.pageX,
+            y: e.nativeEvent.pageY
+        })
+        setMenuVisible(true)
     }}>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-            {message.user ? <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
-                <Text>{message.user.name ?? message.user.id}</Text></> : <Text>Unknown user</Text>}
-        </View>
-        <Card style={{
-            marginVertical: 10,
-            padding: 10
-        }} onLongPress={() => {
-            const inspect = v=>JSON.stringify(v, null, 4)
-            Alert.alert('消息信息', 
-`Sender ${inspect(message.user)}
-Channel ${inspect(message.channel)}
-Content ${inspect(content)}`)
-        }}>
-            {
-                content.map(renderElement)
-            }
-        </Card>
-    </View>
+        <>
+
+            <View style={{
+                flexDirection: isSelf ? 'row-reverse' : 'row',
+                gap: 10,
+            }}>
+                {message.user ? <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
+                    <Text>{message.user.name ?? message.user.id}</Text></> : <Text>Unknown user</Text>}
+            </View>
+            <Card style={{
+                marginVertical: 8,
+                paddingHorizontal: 15,
+                padding: 10,
+                borderRadius: 20
+            }}>
+                {
+                    content.map(renderElement)
+                }
+            </Card>
+
+            <Menu
+                anchor={menuAnchor}
+                visible={menuVisible}
+                onDismiss={() => setMenuVisible(false)}
+            >
+                <Menu.Item onPress={() => {
+                    setMenuVisible(false)
+                }} title="回复" />
+                <Menu.Item onPress={() => {
+                    setMenuVisible(false)
+                }} title="引用" />
+                <Menu.Item onPress={() => {
+                    setMenuVisible(false)
+                }} title="复制" />
+                <Menu.Item onPress={() => {
+                    setMenuVisible(false)
+
+                    setMsgStore(msgStore => {
+                        msgStore[message.channel.id] = msgStore[message.channel.id].filter(v => v.id !== message.id)
+                        return { ...msgStore }
+                    })
+                }} title="删除" />
+                <Menu.Item onPress={() => {
+                    setMenuVisible(false)
+                    const inspect = v => JSON.stringify(v, null, 4)
+                    Alert.alert('消息信息',
+                        `Sender ${inspect(message.user)}
+        Channel ${inspect(message.channel)}
+        Content ${inspect(content)}`)
+                }} title="详细信息" />
+            </Menu>
+        </>
+    </TouchableRipple>
 })
 
 export const Chat = ({
@@ -55,6 +104,9 @@ export const Chat = ({
     const [sendingMessage, setSendingMessage] = useState(false);
     const [msgStore, setMsgStore] = useMessageStore()
     const [messages, setMessages] = useState<SaMessage[]>([]);
+
+    const [menuMessage, setMenuMessage] = useState<SaMessage | null>(null)
+    const [channelMenuVisible, setChannelMenuVisible] = useState(false)
 
     useEffect(() => {
         if (!satori) return;
@@ -95,19 +147,33 @@ export const Chat = ({
     </View>
 
     return <View style={{ flex: 1, margin: 20 }}>
-        <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            paddingBottom: 10
-        }}>
-            <Avatar.Image source={{ uri: route.params.avatar }} size={30} />
-            <Text style={{
-                fontSize: 19,
-                fontWeight: '700'
-            }}>{route.params.name}</Text>
-        </View>
+        <Menu
+            visible={channelMenuVisible}
+            onDismiss={() => setChannelMenuVisible(false)}
+            anchor={
+                <TouchableRipple onPress={() => setChannelMenuVisible(true)}>
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 10,
+                        paddingBottom: 10
+                    }}>
+                        <Avatar.Image source={{ uri: route.params.avatar }} size={30} />
+                        <Text style={{
+                            fontSize: 19,
+                            fontWeight: '700'
+                        }}>{route.params.name}</Text>
+                    </View>
+                </TouchableRipple>
+            }>
+            <Menu.Item onPress={() => {
+                setMsgStore(msgStore => {
+                    msgStore[route.params.channelId] = []
+                    return { ...msgStore }
+                })
+            }} title="清除当前聊天数据" />
+        </Menu>
         <FlatList
             ref={flatListRef}
             data={[...messages].reverse()}
@@ -126,16 +192,12 @@ export const Chat = ({
             <IconButton
                 icon='send'
                 mode="contained"
-                disabled={currentInput === ''}
+                disabled={false && currentInput === ''}
                 onPress={async () => {
-                    setSendingMessage(true)
-                    const msgs = await satori.bot.createMessage(route.params.channelId, currentInput, route.params.guildId)
-                    flatListRef.current.scrollToIndex({
-                        animated: true,
-                        index: 0
-                    })
+                    //setSendingMessage(true)
                     setCurrentInput('')
-                    setSendingMessage(false)
+                    await satori.bot.createMessage(route.params.channelId, currentInput, route.params.guildId)
+                    //setSendingMessage(false)
                 }}
                 loading={sendingMessage}
             />

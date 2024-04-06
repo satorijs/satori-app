@@ -37,14 +37,14 @@ export const useLogin = () => {
     const satori = useSatori()
     const { login, setLogin } = _useLogin()
     useEffect(() => {
-        if (satori === null) return
+        if (satori === null || login !== null) return
         console.log('get login')
         satori.bot.getLogin().then(v => {
             console.log('get login', v)
             setLogin(v)
 
         })
-    }, [satori])
+    }, [satori, login])
 
     return login
 }

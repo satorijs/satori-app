@@ -179,6 +179,7 @@ namespace Element {
   }
 
   export function escape(source: string, inline = false) {
+    source ??= ''
     const result = source
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
