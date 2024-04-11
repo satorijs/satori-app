@@ -30,7 +30,7 @@ export const validateConnectionInfo = (connectionInfo: ConnectionInfo) => !(conn
 
 const wrapInheritAll = (evt: any) => {
     for (const key in evt) {
-        if (key !== 'message') evt['message'][key] = evt[key]
+        if (key !== 'message') evt['message'][key] ??= evt[key]
     }
 
     return evt
