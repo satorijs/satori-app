@@ -1,24 +1,57 @@
-import { ActivityIndicator, Alert, Text, View } from "react-native"
+import { ActivityIndicator, Alert, Text, ToastAndroid, View } from "react-native"
 import { useSatoriConnectionInfo } from "../globals/satori"
 import { memo, useEffect, useState } from "react";
-import { Button, IconButton, MD3Colors, TextInput } from 'react-native-paper';
+import { Button, Card, Icon, IconButton, MD3Colors, TextInput } from 'react-native-paper';
 import { ConnectionInfo } from "../satori/connection";
 import { createAPI } from "../satori/protocol";
 import { CommonActions, NavigationProp } from "@react-navigation/native";
 import { Stack, StackParamList } from "../globals/navigator";
 import React from "react";
 
-const Input = ((props: { label: string, value: string, onChange: (value: string) => void }) => {
-    return <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 3, marginHorizontal: 30 }}>
-        <TextInput
-            label={props.label}
-            style={{ flex: 1 }}
-            onChangeText={props.onChange}
-            value={props.value}
-            mode="outlined"
-        />
-    </View>
-});
+const ConnectCard = memo(({
+    onPress,
+    name,
+    icon,
+    description,
+    disabled = false,
+}: {
+    onPress: () => void,
+    name: string,
+    icon: string,
+    description: string,
+    disabled?: boolean,
+}) => {
+    return <Card style={{
+        flexDirection: 'row',
+        marginBottom: 20,
+        padding: 20,
+        width: '100%',
+        opacity: disabled ? 0.6 : 1,
+        shadowOpacity: disabled ? 0 : 0.2,
+    }}
+        disabled={disabled}
+        onPress={onPress}>
+        <View style={{
+            flexDirection: 'row',
+            gap: 10,
+            alignItems: 'center'
+        }} aria-disabled={disabled}>
+            <View>
+                <Icon source={icon} size={30} />
+            </View>
+            <View>
+                <Text style={{
+                    fontSize: 22,
+                    fontWeight: '600',
+                }}>{name}</Text>
+                <Text style={{
+                    fontSize: 13,
+                    color: MD3Colors.neutral40,
+                }}>{description}</Text>
+            </View>
+        </View>
+    </Card>
+})
 
 const checkConnection = async (connection: ConnectionInfo) => {
     return createAPI(connection).getLogin().then(v => null).catch(e => e.message);
@@ -43,7 +76,7 @@ export const Login = ({ navigation }: {
     }, []);
 
     if (!restored) return <ActivityIndicator size="large" color="#0000ff" />
-    return <View style={{ flex: 1, alignItems: 'center' }}>
+    return <View style={{ flex: 1, alignItems: 'flex-start', marginHorizontal: 40 }}>
         <Text style={{
             fontSize: 40,
             marginTop: 100,
@@ -59,36 +92,43 @@ export const Login = ({ navigation }: {
             }}
         >Connect / 连接</Text>
 
-        <Input label="Server" value={connection.server} onChange={(value) => setConnection({ ...connection, server: value })} />
-        <Input label="Token" value={connection.token} onChange={(value) => setConnection({ ...connection, token: value })} />
-        <Input label="Platform" value={connection.platform} onChange={(value) => setConnection({ ...connection, platform: value })} />
-        <Input label="ID" value={connection.id} onChange={(value) => setConnection({ ...connection, id: value })} />
-
-        <View style={{ flexDirection: 'row', marginHorizontal: 30, marginTop: 20 }}>
-            <Button mode='contained' style={{
-                flex: 1
+        <ConnectCard
+            onPress={() => {
+                navigation.navigate('ConnectToSatori')
             }}
-                onPress={async () => {
-                    console.log('connect');
-                    setConnecting(true);
-                    const error = await checkConnection(connection);
-                    setConnecting(false);
-                    if (error === null) {
-                        setConnection(connection);
-                        navigation.dispatch(CommonActions.reset({
-                            index: 0,
-                            routes: [{ name: 'Main' }]
-                        }))
-                    } else {
-                        Alert.alert('Connection failed', error);
-                    }
-                }}
-                disabled={!connection.server || !connection.token || !connection.platform || !connection.id || connecting}
-            >
-                {connecting ? <ActivityIndicator size="small" color="#ffffff" style={{
-                    margin: 100
-                }} /> : 'Connect'}
-            </Button>
-        </View>
+            name="Satori"
+            icon="cloud"
+            description="连接至远程 Satori (App) Server"
+        />
+
+        <ConnectCard
+            onPress={() => {
+                ToastAndroid.show('未完成', ToastAndroid.SHORT)
+            }}
+            name="Onebot"
+            icon="qqchat"
+            description="连接至 Onebot11 协议"
+            disabled
+        />
+
+        <ConnectCard
+            onPress={() => {
+                ToastAndroid.show('未完成', ToastAndroid.SHORT)
+            }}
+            name="Telegram"
+            icon="send"
+            description="连接至 Telegram 用户/Bot"
+            disabled
+        />
+
+        <ConnectCard
+            onPress={() => {
+                ToastAndroid.show('未完成', ToastAndroid.SHORT)
+            }}
+            name="Discord"
+            icon="discord"
+            description="连接至 Discord 用户/Bot"
+            disabled
+        />
     </View>
 }

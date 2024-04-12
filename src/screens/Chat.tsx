@@ -101,10 +101,10 @@ const Message = memo(({ message }: { message: SaMessage }) => {
                         setMenuVisible(false)
 
                         const content = Element.parse(message.content)
-                        const text = content.map(v => v.attrs?.text).filter(v => v).join(' ')
-
+                        const text = content.map(v => v.attrs?.content).filter(v => v).join(' ')
+                        console.log('copy', text)
                         Clipboard.setString(text)
-                        ToastAndroid.show('已复制', ToastAndroid.SHORT)
+                        // ToastAndroid.show('已复制', ToastAndroid.SHORT)
                     }} title="复制" />
                     <Menu.Item onPress={() => {
                         setMenuVisible(false)
@@ -288,16 +288,8 @@ export const Chat = ({
                         let elems = [Element.text(currentInput)]
                         if (replyTo) {
                             elems.unshift(Element.jsx('quote', {
-                                id: replyTo.id,
-                                'chronocat:seq': replyTo.id
-                            }, [
-                                Element.jsx('author', {
-                                    id: replyTo.user?.id,
-                                    name: replyTo.user?.name ?? replyTo.user?.id,
-                                    avatar: replyTo.user?.avatar
-                                }),
-                                ...Element.parse(replyTo.content)
-                            ]))
+                                id: replyTo.id
+                            }))
                             setReplyTo(null)
                         }
 

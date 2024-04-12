@@ -210,9 +210,15 @@ const fixArrays = (obj: object) => {
     }
 }
 
+class SatoriError extends Error {
+    constructor(message: string) {
+        super(message)
+        this.name = 'SatoriError'
+    }
+}
+
 const satoriError = (message: string) => {
-    Alert.alert('Satori Error', message)
-    // throw new Error(message)
+    throw new SatoriError(message)
 }
 
 /*

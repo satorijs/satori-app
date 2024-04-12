@@ -8,7 +8,10 @@ export type StackParamList = {
         guildId: string;
         name: string;
         avatar: string;
-    }
+    },
+
+    
+    ConnectToSatori: undefined;
 }
 
 export const Stack = createNativeStackNavigator<StackParamList>();

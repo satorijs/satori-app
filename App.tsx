@@ -22,6 +22,7 @@ import { Main as MainScreen } from './src/screens/Main';
 import { Stack } from './src/globals/navigator';
 import { Chat } from './src/screens/Chat';
 import { MessageStoreContext, useMessageStoreSingle } from './src/globals/message';
+import { ConnectToSatori } from './src/screens/connection/Satori';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
 
@@ -48,6 +49,12 @@ function App(): React.JSX.Element {
           <Stack.Screen
             name="Chat"
             component={Chat}
+          />
+          
+          {/* Connect to adaptors */}
+          <Stack.Screen
+            name="ConnectToSatori"
+            component={ConnectToSatori}
           />
         </Stack.Navigator>
       </NavigationContainer>
