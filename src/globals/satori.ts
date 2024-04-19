@@ -20,7 +20,13 @@ export const useSatori = () => {
     const [info] = useSatoriConnectionInfo()
     const { connection, setConnection } = _useSatoriConnection()
     if (connection === null && validateConnectionInfo(info)) {
-        setConnection(new SatoriConnection(info))
+        setConnection(new SatoriConnection({
+            https: false,
+            server: '192.168.31.246:3453',
+            platform: '',
+            id: '',
+            token: ''
+        }))
     }
     return connection
 }

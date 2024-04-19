@@ -33,6 +33,7 @@
     "react-native-use-persist-storage": "^1.0.2",
     "react-native-vector-icons": "^10.0.3",
     "react-navigation": "^5.0.0",
+    "react-use": "^17.5.0",
     "zustand": "^4.5.2"
   },
   "devDependencies": {

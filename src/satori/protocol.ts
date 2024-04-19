@@ -67,6 +67,10 @@ export const Methods: Dict<Method> = {
     'friend.approve': Method('handleFriendRequest', ['message_id', 'approve', 'comment']),
     'guild.approve': Method('handleGuildRequest', ['message_id', 'approve', 'comment']),
     'guild.member.approve': Method('handleGuildMemberRequest', ['message_id', 'approve', 'comment']),
+    'app/contact.list': Method('getContactList', ['next']),
+    'app/login.list': Method('getLoginList', ['next']),
+    'app/login': Method('appLogin', ['platform', 'config']),
+    'app/message.list': Method('getMessageList', ['channel_id', 'next']),
 }
 
 export interface List<T> {
@@ -137,6 +141,23 @@ export interface Methods {
 
     // commands
     updateCommands(commands: Command[]): Promise<void>
+
+    // SAS
+    appLogin(platform: string, config: Dict): Promise<void>
+    getContactList(next?: string): Promise<List<User>>
+    getLoginList(next?: string): Promise<List<Login>>
+    getMessageList(channelId: string, next?: string): Promise<List<Message>>
+    getLoginIter(): AsyncIterable<Login>
+    getContactIter(): AsyncIterable<User>
+    getMessagesIter(channelId: string): AsyncIterable<Message>
+}
+
+export const asyncIterToArr = async <T>(iter: AsyncIterable<T>) => {
+    const arr = []
+    for await (const v of iter) {
+        arr.push(v)
+    }
+    return arr
 }
 
 
