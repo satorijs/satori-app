@@ -2,6 +2,7 @@ import { Alert } from 'react-native'
 import { ConnectionInfo } from './connection'
 import Element from './element'
 import { Dict } from 'cosmokit'
+import { Contact } from './sas'
 
 export interface SendOptions {
     linkPreview?: boolean
@@ -144,7 +145,7 @@ export interface Methods {
 
     // SAS
     appLogin(platform: string, config: Dict): Promise<void>
-    getContactList(next?: string): Promise<List<User>>
+    getContactList(next?: string): Promise<List<Contact>>
     getLoginList(next?: string): Promise<List<Login>>
     getMessageList(channelId: string, next?: string): Promise<List<Message>>
     getLoginIter(): AsyncIterable<Login>
@@ -190,7 +191,9 @@ const convertCamelObjectToSnake = (obj: object) => {
     }
     const newObj: Dict = {}
     for (const key in obj) {
-        newObj[convertCamelToSnake(key)] = convertCamelObjectToSnake(obj[key])
+        const res = convertCamelObjectToSnake(obj[key])
+        newObj[convertCamelToSnake(key)] = res
+        // newObj[key] = res
     }
     return newObj
 }
@@ -201,7 +204,9 @@ const convertSnakeObjectToCamel = (obj: object) => {
     }
     const newObj: Dict = {}
     for (const key in obj) {
-        newObj[convertSnakeToCamel(key)] = convertSnakeObjectToCamel(obj[key])
+        const res = convertSnakeObjectToCamel(obj[key])
+        newObj[convertSnakeToCamel(key)] = res
+        newObj[key] = res
     }
     return newObj
 }
@@ -263,7 +268,16 @@ X-Self-ID: 1234567890
 
 {"channel_id": "1234567890"}
  */
-export const callMethodAsync = (method: string, args: object, connectionInfo: ConnectionInfo) => {
+
+export type BotInfo = {
+    platform: string
+    id: string
+} | {
+    platform?: undefined
+    id?: undefined
+}
+
+export const callMethodAsync = async (method: string, args: object, connectionInfo: ConnectionInfo, botInfo: BotInfo) => {
     // Verify fields
     const methodInfo = Methods[method]
     if (!methodInfo) {
@@ -280,30 +294,28 @@ export const callMethodAsync = (method: string, args: object, connectionInfo: Co
     const headers = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${connectionInfo.token}`,
-        'X-Platform': connectionInfo.platform,
-        'X-Self-ID': connectionInfo.id,
+        'X-Platform': botInfo.platform ?? '',
+        'X-Self-ID': botInfo.id ?? '',
     }
     const body = JSON.stringify(args)
 
 
     console.log('call satori', method)
-    return fetch(url, { method: 'POST', headers, body }).then(res => {
-        if (!res.ok) {
-            satoriError(`HTTP ${res.status}: ${res.statusText} (${httpCodeTips[res.status]})`)
-        }
-        return res.text()
-    }).then(v => {
-        try {
-            console.log(method, '=> response', v)
-            return fixArrays(convertSnakeObjectToCamel(JSON.parse(v)))
-        } catch (e) {
-            satoriError(`Failed to parse response: ${v}`)
-        }
-    })
+    const res = await fetch(url, { method: 'POST', headers, body })
+    if (!res.ok) {
+        satoriError(`HTTP ${res.status}: ${res.statusText} (${httpCodeTips[res.status]})`)
+    }
+    const v = await res.text()
+    try {
+        console.log(method, '=> response', v)
+        return fixArrays(convertSnakeObjectToCamel(JSON.parse(v)))
+    } catch (e) {
+        satoriError(`Failed to parse response: ${v}`)
+    }
 }
 
-export const createAPI = (connectionInfo: ConnectionInfo): Methods => {
-    const callMethod = (method: string, args: object) => callMethodAsync(method, args, connectionInfo)
+export const createAPI = (connectionInfo: ConnectionInfo, botInfo: BotInfo): Methods => {
+    const callMethod = (method: string, args: object) => callMethodAsync(method, args, connectionInfo, botInfo)
 
     const createMethod = (methodId: string) => {
         return (...args: any[]) => callMethod(methodId, Object.fromEntries(Methods[methodId].fields.map((field, i) => [field.name, args[i]])))

@@ -1,5 +1,5 @@
 import { ActivityIndicator, Alert, Text, View } from "react-native"
-import { useSatoriConnectionInfo } from "../../globals/satori"
+import { useSatori, useSatoriConnectionInfo } from "../../globals/satori"
 import { memo, useEffect, useState } from "react";
 import { Button, IconButton, MD3Colors, TextInput } from 'react-native-paper';
 import { ConnectionInfo } from "../../satori/connection";
@@ -20,10 +20,6 @@ const Input = ((props: { label: string, value: string, onChange: (value: string)
     </View>
 });
 
-const checkConnection = async (connection: ConnectionInfo) => {
-    return createAPI(connection).getLogin().then(v => null).catch(e => e.message);
-}
-
 export const ConnectToSatori = ({ navigation }: {
     navigation: NavigationProp<StackParamList>
 }) => {
@@ -31,17 +27,23 @@ export const ConnectToSatori = ({ navigation }: {
 
     const [connecting, setConnecting] = useState(false);
 
+    const satori = useSatori();
+
+    const login = () => satori.bot.appLogin('satori', {
+        endpoint: 'http://' + connection.server,
+        token: connection.token,
+    })
+
     useEffect(() => {
         if (restored)
-            checkConnection(connection).then(error => {
+            login().catch(error => {
                 console.log('connect', error, error === null);
-                if (error === null) {
-                    navigation.dispatch(CommonActions.reset({
-                        index: 0,
-                        routes: [{ name: 'Main' }]
-                    }))
-                }
-            });
+            }).then(() => {
+                navigation.dispatch(CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: 'Main' }]
+                }))
+            })
     }, [restored]);
 
     if (!restored) return <ActivityIndicator size="large" color="#0000ff" />
@@ -73,18 +75,16 @@ export const ConnectToSatori = ({ navigation }: {
                 onPress={async () => {
                     console.log('connect');
                     setConnecting(true);
-                    const error = await checkConnection(connection);
-                    setConnecting(false);
-                    console.log('connect', error);
-                    if (error === null) {
-                        setConnection(connection);
+                    login().catch(error => {
+                        setConnecting(false);
+                        Alert.alert('Error', error.message);
+                    }).then(() => {
+                        setConnecting(false);
                         navigation.dispatch(CommonActions.reset({
                             index: 0,
                             routes: [{ name: 'Main' }]
                         }))
-                    } else {
-                        Alert.alert('Connection failed', error);
-                    }
+                    })
                 }}
                 disabled={!connection.server || !connection.token || !connection.platform || !connection.id || connecting}
             >

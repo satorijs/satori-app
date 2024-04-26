@@ -1,12 +1,12 @@
 import { NavigationProp, RouteProp } from "@react-navigation/native"
 import { StackParamList } from "../globals/navigator"
-import { Alert, FlatList, ToastAndroid, View } from "react-native"
+import { Alert, ToastAndroid, View } from "react-native"
+import { FlatList } from "react-native-bidirectional-infinite-scroll";
 import { ActivityIndicator, Avatar, Card, Chip, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
 import { memo, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
-import { useLogin, useSatori } from "../globals/satori"
+import { useLogins, useSatori } from "../globals/satori"
 import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage } from "../satori/protocol"
 import Element from "../satori/element"
-import { useMessageStore } from "../globals/message"
 import { elementRendererMap, renderElement, elementToObject, toPreviewString } from "../components/elements/elements"
 import React from "react"
 import Clipboard from "@react-native-clipboard/clipboard"
@@ -23,38 +23,19 @@ const useReplyTo = create<{
 
 const Message = memo(({ message }: { message: SaMessage }) => {
     const content = useMemo(() => Element.parse(message.content).map(elementToObject), [message]);
-    const login = useLogin()
-    const isSelf = login?.selfId === message.user?.id
+    const login = useLogins()
+    const isSelf = login?.some(v => v.user.id === message.user.id) ?? false
     const [menuVisible, setMenuVisible] = useState(false)
     const [menuAnchor, setMenuAnchor] = useState<{
         x: number,
         y: number
     } | null>(null)
-    const [msgStore, setMsgStore] = useMessageStore()
+    const [msgStore, setMsgStore] = useState([])
     const satori = useSatori()
 
     const { setReplyTo } = useReplyTo()
 
-    const animMaxHeight = useSharedValue(0);
-
-    useEffect(() => {
-        if ((Date.now() - message.timestamp * 1000) < 1000) {
-            animMaxHeight.value = withTiming(500, {
-                duration: 300,
-                easing: Easing.linear
-            })
-
-            setTimeout(() => {
-                animMaxHeight.value = 2000
-            }, 1000)
-        }
-        else
-            animMaxHeight.value = 2000
-    }, [message])
-
-    return <Animated.View style={{
-        //            height: 20
-        maxHeight: animMaxHeight,
+    return <View style={{
         overflow: 'visible'
     }}>
         <TouchableRipple style={{
@@ -125,7 +106,7 @@ const Message = memo(({ message }: { message: SaMessage }) => {
                         setMenuVisible(false)
                         const inspect = v => JSON.stringify(v, null, 4)
                         Alert.alert('消息信息',
-`
+                            `
 ID ${message.id}
 Sender ${inspect(message.user)}
 Channel ${inspect(message.channel)}
@@ -134,7 +115,7 @@ Content ${inspect(content)}`)
                 </Menu>
             </>
         </TouchableRipple >
-    </Animated.View>
+    </View>
 })
 
 export const Chat = ({
@@ -153,13 +134,15 @@ export const Chat = ({
 
     const [currentInput, setCurrentInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState(false);
-    const [msgStore, setMsgStore] = useMessageStore()
-    const [messages, setMessages] = useState<SaMessage[]>([]);
+    const [msgNext, setMsgNext] = useState(null)
+    const [messages, setMessages] = useState<SaMessage[]>(null);
 
     const [menuMessage, setMenuMessage] = useState<SaMessage | null>(null)
     const [channelMenuVisible, setChannelMenuVisible] = useState(false)
 
     const { replyTo, setReplyTo } = useReplyTo()
+
+    const [refreshing, setRefreshing] = useState(false)
 
     useEffect(() => {
         if (!satori) return;
@@ -169,33 +152,32 @@ export const Chat = ({
         //    satori.bot.getGuild(route.params.guildId).then(setGuild)
     }, [satori, route.params])
 
+
+    useEffect(() => {
+        console.log('update messages')
+        satori.bot.getMessageList(route.params.channelId).then(v => {
+            setMessages(v.data)
+            setMsgNext(v.next)
+        })
+    }, [])
+
     useEffect(() => {
         if (!satori) return
         const l = satori.addListener('message', (e: SatoriEvent) => {
             if (e?.message && e?.channel?.id === route.params.channelId) {
-                console.log('update')
-
-                setTimeout(() => {
-                    setMessages(v => msgStore[route.params.channelId])
-                }, 100)
+                setMessages(v => {
+                    v.push(e.message)
+                    return [...v]
+                })
             }
         })
 
         return () => {
             l.remove()
         }
-    }, [satori, msgStore])
+    }, [satori, messages])
 
-    const flatListRef = useRef<FlatList<SaMessage>>(null)
-
-    useEffect(() => {
-        console.log('update messages')
-        if (msgStore[route.params.channelId]) {
-            setMessages(msgStore[route.params.channelId])
-        }
-    }, [msgStore])
-
-    if (!msgStore) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+    if (messages === null) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
     </View>
 
@@ -221,23 +203,48 @@ export const Chat = ({
                 </TouchableRipple>
             }>
             <Menu.Item onPress={() => {
-                setMsgStore(msgStore => {
-                    msgStore[route.params.channelId] = []
-                    return { ...msgStore }
-                })
+                // setMsgStore(msgStore => {
+                //     msgStore[route.params.channelId] = []
+                //     return { ...msgStore }
+                // })
             }} title="清除当前聊天数据" />
         </Menu>
         <FlatList
+            onScroll={e => {
+
+            }}
             removeClippedSubviews
+            enableAutoscrollToTop 
             maxToRenderPerBatch={5}
             windowSize={8}
-            ref={flatListRef}
             data={[...messages].reverse()}
             inverted
+            // maintainVisibleContentPosition={{
+            //     minIndexForVisible: 1,
+            //     autoscrollToTopThreshold: 10
+            // }}
+            refreshing={refreshing}
+            onEndReached={async () => {
+                if (msgNext) {
+                    setRefreshing(true)
+                    const v = await satori.bot.getMessageList(route.params.channelId, msgNext)
+                    setMessages(v.data.concat(messages))
+                    setMsgNext(v.next)
+                    setRefreshing(false)
+                }
+            }}
+            onStartReached={async () => {
+
+            }}
             style={{
                 flex: 1
             }}
-            renderItem={({ item }) => <Message message={item} />}
+            renderItem={({ item }) =>
+            <View onLayout={e=>{
+                // console.log('layout', e.nativeEvent.layout)
+            }}>
+                <Message message={item} />
+            </View>}
         />
 
         <View style={{

@@ -4,7 +4,7 @@ import { Card, TouchableRipple } from "react-native-paper"
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
-
+import FastImage from 'react-native-fast-image'
 
 async function hasAndroidPermission() {
     const getCheckPermissionPromise = () => {
@@ -47,24 +47,32 @@ async function hasAndroidPermission() {
 
 
 export const Img = ({ src }) => {
-    const [width, setWidth] = useState(100)
+    const [width, setWidth] = useState(200)
     const [height, setHeight] = useState(100)
     const [visible, setIsVisible] = useState(false);
 
     return <>
-        <TouchableRipple onPress={() => setIsVisible(true)}>
-            <Image source={{ uri: src }} style={{
+        <TouchableRipple onPress={() => setIsVisible(true)} style={{
+            borderRadius: 15,
+            overflow: 'hidden',
+            width, height
+        
+        }}>
+            <FastImage 
+            source={{ uri: src }} 
+            style={{
                 borderRadius: 15,
                 overflow: 'hidden',
-                width: width, height: height,
-            }} resizeMode='contain' resizeMethod='resize' onLoad={e => {
+                width, height
+            }} resizeMode={FastImage.resizeMode.contain} onLoad={e => {
+                // console.log('onload')
                 const maxWidth = 200, maxHeight = 200
                 const scale =
-                    Math.min(maxWidth / e.nativeEvent.source.width,
-                        maxHeight / e.nativeEvent.source.height, 1)
-                setWidth(e.nativeEvent.source.width * scale)
-                setHeight(e.nativeEvent.source.height * scale)
-                console.log(e.nativeEvent.source.width * scale, e.nativeEvent.source.height * scale)
+                    Math.min(maxWidth / e.nativeEvent.width,
+                        maxHeight / e.nativeEvent.height, 1)
+                setWidth(e.nativeEvent.width * scale)
+                setHeight(e.nativeEvent.height * scale)
+                // console.log(e.nativeEvent.source.width * scale, e.nativeEvent.source.height * scale)
             }} />
         </TouchableRipple>
         <Modal visible={visible} transparent>

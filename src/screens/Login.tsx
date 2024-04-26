@@ -53,27 +53,12 @@ const ConnectCard = memo(({
     </Card>
 })
 
-const checkConnection = async (connection: ConnectionInfo) => {
-    return createAPI(connection).getLogin().then(v => null).catch(e => e.message);
-}
-
 export const Login = ({ navigation }: {
     navigation: NavigationProp<StackParamList>
 }) => {
     const [connection, setConnection, restored] = useSatoriConnectionInfo();
 
     const [connecting, setConnecting] = useState(false);
-
-    useEffect(() => {
-        checkConnection(connection).then(error => {
-            if (error === null) {
-                navigation.dispatch(CommonActions.reset({
-                    index: 0,
-                    routes: [{ name: 'Main' }]
-                }))
-            }
-        });
-    }, []);
 
     if (!restored) return <ActivityIndicator size="large" color="#0000ff" />
     return <View style={{ flex: 1, alignItems: 'flex-start', marginHorizontal: 40 }}>

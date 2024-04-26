@@ -6,6 +6,7 @@ export class AutoReconnectWebSocket {
     ws: WebSocket;
 
     constructor(url: string, protocols: string | string[] | null | undefined) {
+        console.log("websocket", url)
         this.url = url;
         this.protocols = protocols;
         this.ws = new WebSocket(url, protocols);
@@ -16,6 +17,7 @@ export class AutoReconnectWebSocket {
             newWs.onmessage = this.ws.onmessage;
             newWs.onerror = this.ws.onerror;
             newWs.onclose = this.ws.onclose;
+            this.ws = newWs
         };
     }
     send(data: any) {

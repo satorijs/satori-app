@@ -77,7 +77,10 @@ export class SatoriConnection extends EventEmitter {
             this.emit('open');
         });
 
-        this.bot = createAPI(this.connectionInfo);
+        this.bot = createAPI(this.connectionInfo, {
+            id: '1715311957',
+            platform: 'chronocat'
+        });
     }
 
     lastPingHandler = null;

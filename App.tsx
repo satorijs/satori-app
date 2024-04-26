@@ -21,7 +21,6 @@ import { Login } from './src/screens/Login';
 import { Main as MainScreen } from './src/screens/Main';
 import { Stack } from './src/globals/navigator';
 import { Chat } from './src/screens/Chat';
-import { MessageStoreContext, useMessageStoreSingle } from './src/globals/message';
 import { ConnectToSatori } from './src/screens/connection/Satori';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
@@ -29,36 +28,31 @@ const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNaviga
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
-  const [data, setData, restored] = useMessageStoreSingle();
-
   return (
-    /* @ts-ignore */
-    <MessageStoreContext.Provider>
-      <NavigationContainer theme={isDarkMode ? DarkThemeA : LightTheme} >
-        <Stack.Navigator screenOptions={{
-          headerShown: false
-        }}>
-          <Stack.Screen
-            name="Login"
-            component={Login}
-          />
-          <Stack.Screen
-            name="Main"
-            component={MainScreen}
-          />
-          <Stack.Screen
-            name="Chat"
-            component={Chat}
-          />
-          
-          {/* Connect to adaptors */}
-          <Stack.Screen
-            name="ConnectToSatori"
-            component={ConnectToSatori}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </MessageStoreContext.Provider>
+    <NavigationContainer theme={isDarkMode ? DarkThemeA : LightTheme} >
+      <Stack.Navigator screenOptions={{
+        headerShown: false
+      }}>
+        <Stack.Screen
+          name="Main"
+          component={MainScreen}
+        />
+        <Stack.Screen
+          name="Login"
+          component={Login}
+        />
+        <Stack.Screen
+          name="Chat"
+          component={Chat}
+        />
+
+        {/* Connect to adaptors */}
+        <Stack.Screen
+          name="ConnectToSatori"
+          component={ConnectToSatori}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
