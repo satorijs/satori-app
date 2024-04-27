@@ -35,7 +35,7 @@ export const Config = () => {
 
         <MaterialSwitchListItem
             title="消息合并"
-            description="合并连续的，同一用户发送的相同消息"
+            description="合并连续的，同一用户发送的，相同内容的消息"
             selected={mergeMessage}
             onPress={() => {
                 setMergeMessage(!mergeMessage)
