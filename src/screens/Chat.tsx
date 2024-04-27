@@ -156,7 +156,7 @@ export const Chat = ({
     useEffect(() => {
         console.log('update messages')
         satori.bot.getMessageList(route.params.channelId).then(v => {
-            setMessages(v.data)
+            setMessages(v.data.reverse())
             setMsgNext(v.next)
         })
     }, [])
@@ -164,9 +164,15 @@ export const Chat = ({
     useEffect(() => {
         if (!satori) return
         const l = satori.addListener('message', (e: SatoriEvent) => {
+            // console.log(
+            //     'message',
+            //     e?.message?.content,
+            //     e?.message?.channel?.id,
+            //     route.params.channelId
+            // )
             if (e?.message && e?.channel?.id === route.params.channelId) {
                 setMessages(v => {
-                    v.push(e.message)
+                    v.unshift(e.message)
                     return [...v]
                 })
             }
@@ -217,7 +223,7 @@ export const Chat = ({
             enableAutoscrollToTop 
             maxToRenderPerBatch={5}
             windowSize={8}
-            data={[...messages].reverse()}
+            data={messages}
             inverted
             // maintainVisibleContentPosition={{
             //     minIndexForVisible: 1,
@@ -228,7 +234,7 @@ export const Chat = ({
                 if (msgNext) {
                     setRefreshing(true)
                     const v = await satori.bot.getMessageList(route.params.channelId, msgNext)
-                    setMessages(v.data.concat(messages))
+                    setMessages(v.data.reverse().concat(messages))
                     setMsgNext(v.next)
                     setRefreshing(false)
                 }
