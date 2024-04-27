@@ -71,7 +71,7 @@ export const Methods: Dict<Method> = {
     'app/contact.get': Method('getContactList', []),
     'app/login.list': Method('getLoginList', ['next']),
     'app/login': Method('appLogin', ['platform', 'config']),
-    'app/message.list': Method('getMessageList', ['channel_id', 'next']),
+    'app/message.get': Method('getMessageListSAS', ['channel_id', 'cursor', 'direction']),
 }
 
 export interface List<T> {
@@ -149,7 +149,10 @@ export interface Methods {
         [key: string]: Contact
     }>
     getLoginList(next?: string): Promise<List<Login>>
-    getMessageList(channelId: string, next?: string): Promise<List<Message>>
+    getMessageListSAS(channelId: string, 
+        cursor?: string,
+        direction?: 'asc' | 'desc',
+        ): Promise<Message[]>
     getLoginIter(): AsyncIterable<Login>
     getContactIter(): AsyncIterable<User>
     getMessagesIter(channelId: string): AsyncIterable<Message>
@@ -273,10 +276,10 @@ X-Self-ID: 1234567890
 
 export type BotInfo = {
     platform: string
-    id: string
+    selfId: string
 } | {
     platform?: undefined
-    id?: undefined
+    selfId?: undefined
 }
 
 export const callMethodAsync = async (method: string, args: object, connectionInfo: ConnectionInfo, botInfo: BotInfo) => {
@@ -297,7 +300,7 @@ export const callMethodAsync = async (method: string, args: object, connectionIn
         'Content-Type': 'application/json',
         Authorization: `Bearer ${connectionInfo.token}`,
         'X-Platform': botInfo.platform ?? '',
-        'X-Self-ID': botInfo.id ?? '',
+        'X-Self-ID': botInfo.selfId ?? '',
     }
     const body = JSON.stringify(args)
 
@@ -403,8 +406,8 @@ export interface GuildMember {
 
 export interface Login {
     user?: User
-    platform?: string
-    selfId?: string
+    platform: string
+    selfId: string
     hidden?: boolean
     status: Status
 }

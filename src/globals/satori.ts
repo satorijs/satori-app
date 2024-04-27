@@ -1,7 +1,7 @@
 import { usePersistStorage } from "react-native-use-persist-storage";
 import { ConnectionInfo, SatoriConnection, defaultConnectionInfo, validateConnectionInfo } from "../satori/connection";
 import { create } from "zustand";
-import { Login, asyncIterToArr } from "../satori/protocol";
+import { Event as SatoriEvent, Login, asyncIterToArr } from "../satori/protocol";
 import { useEffect } from "react";
 
 export const useSatoriConnectionInfo = () => usePersistStorage('@connectionInfo', () => defaultConnectionInfo, {
@@ -45,31 +45,28 @@ export const useLogins = () => {
     useEffect(() => {
         if (satori === null || login !== null) return
         console.log('get login')
-        asyncIterToArr(satori.bot.getLoginIter()).then(v => {
+        asyncIterToArr(satori.bot().getLoginIter()).then(v => {
             console.log('get login', v)
             setLogin(v)
         })
-    }, [satori, login])
+    }, [satori])
+
+    useEffect(() => {
+        if (!satori) return
+        const h = satori.addListener('message', (e: SatoriEvent)=>{
+            if (e.type === 'app-login') {
+                asyncIterToArr(satori.bot().getLoginIter()).then(v => {
+                    console.log('get login', v)
+                    setLogin(v)
+                })
+            }
+        })
+
+        return () => {
+            h.remove()
+        }
+    }, [satori])
 
     return login
-}
-
-export const _useChosenLogin = create<{
-    chosenLogin: Login | null,
-    setChosenLogin: (login: Login) => void
-}>((set, get) => ({
-    chosenLogin: null,
-    setChosenLogin: (login: Login) => set({ chosenLogin: login })
-}))
-
-export const useChosenLogin = () => {
-    const login = useLogins()
-    const { chosenLogin, setChosenLogin } = _useChosenLogin()
-    useEffect(() => {
-        if (login === null || chosenLogin !== null) return
-        setChosenLogin(login[0])
-    }, [login, chosenLogin])
-
-    return [chosenLogin, setChosenLogin] as const
 }
 

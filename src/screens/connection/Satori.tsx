@@ -34,17 +34,17 @@ export const ConnectToSatori = ({ navigation }: {
         token: connection.token,
     })
 
-    useEffect(() => {
-        if (restored)
-            login().catch(error => {
-                console.log('connect', error, error === null);
-            }).then(() => {
-                navigation.dispatch(CommonActions.reset({
-                    index: 0,
-                    routes: [{ name: 'Main' }]
-                }))
-            })
-    }, [restored]);
+    // useEffect(() => {
+    //     if (restored)
+    //         login().catch(error => {
+    //             console.log('connect', error, error === null);
+    //         }).then(() => {
+    //             navigation.dispatch(CommonActions.reset({
+    //                 index: 0,
+    //                 routes: [{ name: 'Main' }]
+    //             }))
+    //         })
+    // }, [restored]);
 
     if (!restored) return <ActivityIndicator size="large" color="#0000ff" />
     return <View style={{ flex: 1, alignItems: 'flex-start', marginHorizontal: 40 }}>

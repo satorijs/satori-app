@@ -1,7 +1,7 @@
 import { NavigationProp } from "@react-navigation/native"
-import { FlatList, View, RefreshControl } from "react-native"
+import { FlatList, View, RefreshControl, Pressable } from "react-native"
 import { ActivityIndicator, Avatar, Button, Text, TouchableRipple } from "react-native-paper"
-import { useChosenLogin, useLogins, useSatori } from "../../globals/satori"
+import { useLogins, useSatori } from "../../globals/satori"
 import { useEffect, useMemo, useState } from "react"
 import { Event, Guild, List } from "../../satori/protocol"
 import { StackParamList } from "../../globals/navigator"
@@ -9,6 +9,7 @@ import Element from "../../satori/element"
 import { toPreviewString } from "../../components/elements/elements"
 import { Contact } from "../../satori/sas"
 import { Dict } from "cosmokit"
+import { LoginSelector } from "../../components/LoginSelectorMenu"
 
 export const Contacts = ({ navigation }: {
     navigation: NavigationProp<StackParamList>
@@ -32,13 +33,14 @@ export const Contacts = ({ navigation }: {
         return new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()
     }), [contacts])
 
-    const [chosenLogin, setChosenLogin] = useChosenLogin()
+    const [chosenLogin, setChosenLogin] = useState(login?.[0] ?? null)
+    const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
     const [refreshing, setRefreshing] = useState(false)
 
     useEffect(() => {
         if (satori === null) return
-        satori.bot.getContactList().then(v => {
+        satori.bot().getContactList().then(v => {
             setContacts(v)
         })
     }, [satori])
@@ -49,28 +51,37 @@ export const Contacts = ({ navigation }: {
         flex: 1
     }}>
         <Text>你好</Text>
-        <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            alignContent: 'center',
-            marginTop: 10,
-            marginBottom: 10,
-        }}>
-            <Avatar.Image source={{
-                uri: chosenLogin?.user.avatar
-            }} size={24} />
-            <Text style={{
-                fontSize: 24,
-                marginLeft: 10,
-            }}>{chosenLogin?.selfId}</Text>
-        </View>
+        <LoginSelector anchor={
+            <Pressable onPress={() => {
+                setLoginSelectorVisible(true)
+            }}>
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    alignContent: 'center',
+                    marginTop: 10,
+                    marginBottom: 10,
+                }}>
+                    <Avatar.Image source={{
+                        uri: chosenLogin?.user.avatar
+                    }} size={24} />
+                    <Text style={{
+                        fontSize: 24,
+                        marginLeft: 10,
+                    }}>{chosenLogin?.selfId}</Text>
+                </View>
+            </Pressable>
+        } onSelect={q => setChosenLogin(login.find(v => v.selfId === q.selfId) ?? null)}
+            visible={loginSelectorVisible} current={
+                chosenLogin
+            } onDismiss={() => setLoginSelectorVisible(false)} />
 
         <FlatList
             data={sortedContacts}
             refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={() => {
                     setRefreshing(true)
-                    satori.bot.getContactList().then(v => {
+                    satori.bot().getContactList().then(v => {
                         setContacts(v)
                         setRefreshing(false)
                     })
@@ -85,7 +96,7 @@ export const Contacts = ({ navigation }: {
 
                 return <TouchableRipple onPress={async () => {
                     // console.log(item)
-                    const guild = await satori.bot.getChannelList(item.id)
+                    const guild = await satori.bot(chosenLogin).getChannelList(item.id)
                     navigation.navigate('Chat', {
                         guildId: item.id,
                         channelId: guild.data[0].id,

@@ -1,6 +1,6 @@
 import EventEmitter from "react-native/Libraries/vendor/emitter/EventEmitter";
 import { AutoReconnectWebSocket } from "./auto-reconnect-ws";
-import { GatewayPayloadStructure, Methods, Opcode, Event as SatoriEvent, createAPI } from "./protocol";
+import { BotInfo, GatewayPayloadStructure, Methods, Opcode, Event as SatoriEvent, createAPI } from "./protocol";
 
 export const defaultConnectionInfo = {
     server: '',
@@ -39,8 +39,8 @@ const wrapInheritAll = (evt: any) => {
 export class SatoriConnection extends EventEmitter {
     ws: AutoReconnectWebSocket;
     connectionInfo: ConnectionInfo;
-    bot: Methods;
     lastId: number | null = null;
+    private botCache = new Map<string, Methods>();
     constructor(connectionInfo: ConnectionInfo) {
         super()
         if (!validateConnectionInfo(connectionInfo)) {
@@ -76,11 +76,20 @@ export class SatoriConnection extends EventEmitter {
 
             this.emit('open');
         });
+    }
 
-        this.bot = createAPI(this.connectionInfo, {
-            id: '1715311957',
-            platform: 'chronocat'
-        });
+    bot(info: BotInfo = {}) {
+        const key = `${info.platform}.${info.selfId}`;
+        if (!this.botCache.has(key)) {
+            this.botCache.set(key, createAPI({
+                platform: info.platform,
+                id: info.selfId,
+                https: false,
+                server: '192.168.31.246:3453',
+                token: '0'
+            }, info));
+        }
+        return this.botCache.get(key);
     }
 
     lastPingHandler = null;

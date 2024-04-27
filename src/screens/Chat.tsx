@@ -1,17 +1,18 @@
 import { NavigationProp, RouteProp } from "@react-navigation/native"
 import { StackParamList } from "../globals/navigator"
-import { Alert, ToastAndroid, View } from "react-native"
+import { Alert, Pressable, ToastAndroid, View } from "react-native"
 import { FlatList } from "react-native-bidirectional-infinite-scroll";
 import { ActivityIndicator, Avatar, Card, Chip, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
 import { memo, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
 import { useLogins, useSatori } from "../globals/satori"
-import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage } from "../satori/protocol"
+import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage, BotInfo } from "../satori/protocol"
 import Element from "../satori/element"
 import { elementRendererMap, renderElement, elementToObject, toPreviewString } from "../components/elements/elements"
 import React from "react"
 import Clipboard from "@react-native-clipboard/clipboard"
 import { create } from "zustand"
 import Animated, { Easing, FadeIn, Keyframe, LinearTransition, useSharedValue, withTiming } from "react-native-reanimated"
+import { LoginSelector } from "../components/LoginSelectorMenu";
 
 const useReplyTo = create<{
     replyTo: SaMessage | null,
@@ -21,7 +22,7 @@ const useReplyTo = create<{
     setReplyTo: replyTo => set({ replyTo })
 }))
 
-const Message = memo(({ message }: { message: SaMessage }) => {
+const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: BotInfo }) => {
     const content = useMemo(() => Element.parse(message.content).map(elementToObject), [message]);
     const login = useLogins()
     const isSelf = login?.some(v => v.user.id === message.user.id) ?? false
@@ -76,7 +77,7 @@ const Message = memo(({ message }: { message: SaMessage }) => {
                     <Menu.Item onPress={async () => {
                         setMenuVisible(false)
 
-                        await satori.bot.createMessage(message.channel.id, message.content, message.guild.id)
+                        await satori.bot(curLogin).createMessage(message.channel.id, message.content, message.guild.id)
                     }} title="+1" />
                     <Menu.Item onPress={() => {
                         setMenuVisible(false)
@@ -134,7 +135,6 @@ export const Chat = ({
 
     const [currentInput, setCurrentInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState(false);
-    const [msgNext, setMsgNext] = useState(null)
     const [messages, setMessages] = useState<SaMessage[]>(null);
 
     const [menuMessage, setMenuMessage] = useState<SaMessage | null>(null)
@@ -143,6 +143,10 @@ export const Chat = ({
     const { replyTo, setReplyTo } = useReplyTo()
 
     const [refreshing, setRefreshing] = useState(false)
+
+    const login = useLogins()
+    const [curLogin, setChosenLogin] = useState(login?.[0] ?? null)
+    const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
     useEffect(() => {
         if (!satori) return;
@@ -155,9 +159,8 @@ export const Chat = ({
 
     useEffect(() => {
         console.log('update messages')
-        satori.bot.getMessageList(route.params.channelId).then(v => {
-            setMessages(v.data.reverse())
-            setMsgNext(v.next)
+        satori.bot(curLogin).getMessageListSAS(route.params.channelId).then(v => {
+            setMessages(v)
         })
     }, [])
 
@@ -220,7 +223,7 @@ export const Chat = ({
 
             }}
             removeClippedSubviews
-            enableAutoscrollToTop 
+            enableAutoscrollToTop
             maxToRenderPerBatch={5}
             windowSize={8}
             data={messages}
@@ -231,13 +234,10 @@ export const Chat = ({
             // }}
             refreshing={refreshing}
             onEndReached={async () => {
-                if (msgNext) {
-                    setRefreshing(true)
-                    const v = await satori.bot.getMessageList(route.params.channelId, msgNext)
-                    setMessages(v.data.reverse().concat(messages))
-                    setMsgNext(v.next)
-                    setRefreshing(false)
-                }
+                setRefreshing(true)
+                const v = await satori.bot(curLogin).getMessageListSAS(route.params.channelId, messages[0].id)
+                setMessages(v.concat(messages))
+                setRefreshing(false)
             }}
             onStartReached={async () => {
 
@@ -246,11 +246,11 @@ export const Chat = ({
                 flex: 1
             }}
             renderItem={({ item }) =>
-            <View onLayout={e=>{
-                // console.log('layout', e.nativeEvent.layout)
-            }}>
-                <Message message={item} />
-            </View>}
+                <View onLayout={e => {
+                    // console.log('layout', e.nativeEvent.layout)
+                }}>
+                    <Message message={item} curLogin={curLogin} />
+                </View>}
         />
 
         <View style={{
@@ -291,6 +291,23 @@ export const Chat = ({
                 flexDirection: 'row',
                 height: "auto"
             }}>
+                <Pressable onPress={()=>{
+                    setLoginSelectorVisible(true)
+                }} style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    alignContent: 'center',
+                    marginTop: 10,
+                    marginBottom: 10,
+                    marginRight: 10
+                }}>
+                    <LoginSelector anchor={
+                        <Avatar.Image source={{ uri: curLogin?.user.avatar }} size={30} />
+                    } onSelect={q => {
+                        setChosenLogin(login.find(v => v.selfId === q.selfId) ?? null)
+                    }} visible={loginSelectorVisible} current={curLogin}
+                        onDismiss={() => setLoginSelectorVisible(false)} />
+                </Pressable>
                 <TextInput multiline value={currentInput} onChangeText={v => setCurrentInput(v)} mode='flat' style={{ backgroundColor: 'transparent', flex: 1 }} />
                 <IconButton
                     icon='send'
@@ -308,7 +325,7 @@ export const Chat = ({
 
                         console.log('sendMsg', JSON.stringify(elems, null, 4), elems.map(v => v.toString()).join(''))
 
-                        satori.bot.createMessage(route.params.channelId,
+                        satori.bot(curLogin).createMessage(route.params.channelId,
                             elems.map(v => v.toString(true)).join(''),
                             route.params.guildId)
                             .catch(e => {

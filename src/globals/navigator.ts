@@ -1,4 +1,6 @@
+import { NavigationProp } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { create } from "zustand";
 
 export type StackParamList = {
     Login: undefined;
@@ -15,3 +17,11 @@ export type StackParamList = {
 }
 
 export const Stack = createNativeStackNavigator<StackParamList>();
+
+export const useGlobalStackNavigation = create<{
+    navigation: NavigationProp<StackParamList>;
+    setNavigation: (navigation: NavigationProp<StackParamList>) => void;
+}>(set => ({
+    navigation: null,
+    setNavigation: (navigation) => set({ navigation })
+}))

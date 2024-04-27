@@ -2,10 +2,20 @@ import { createMaterialBottomTabNavigator } from '@react-navigation/material-bot
 import { Contacts } from './main/Contacts';
 import { Icon } from 'react-native-paper';
 import { Config } from './main/Config';
+import { useGlobalStackNavigation } from '../globals/navigator';
+import { useEffect } from 'react';
 
 const Tab = createMaterialBottomTabNavigator();
 
-export const Main = () => {
+export const Main = ({
+    navigation
+}) => {
+    const { setNavigation } = useGlobalStackNavigation()
+
+    useEffect(() => {
+        setNavigation(navigation)
+    }, [navigation])
+
     return (
         <Tab.Navigator>
             <Tab.Screen name="Contacts" component={Contacts} options={{
