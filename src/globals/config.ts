@@ -42,6 +42,6 @@ export const initConfigStore = () => {
 }
 
 export const useConfigKey = <T extends keyof Config>(key: T) => {
-    const { config, setConfig } = useConfig()
-    return [config?.[key], (value: Config[T]) => setConfig({ ...config, [key]: value })] as const
+    const { config, setConfig } = useConfig(e=>e.config?.[key])
+    return [config, setConfig] as [Config[T], (value: Config[T]) => void]
 }

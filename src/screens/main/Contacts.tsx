@@ -81,10 +81,10 @@ export const Contacts = ({ navigation }: {
             }}
             renderItem={({ item }) => {
                 const lastUsername = (item.coverUserNick || item.coverUserName) ?? item.coverUserId
-                console.log(item)
+                // console.log(item)
 
                 return <TouchableRipple onPress={async () => {
-                    console.log(item)
+                    // console.log(item)
                     const guild = await satori.bot.getChannelList(item.id)
                     navigation.navigate('Chat', {
                         guildId: item.id,

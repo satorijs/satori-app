@@ -309,7 +309,7 @@ export const callMethodAsync = async (method: string, args: object, connectionIn
     }
     const v = await res.text()
     try {
-        console.log(method, '=> response', v)
+        console.log(method, '=> response', res.status, res.statusText)
         return fixArrays(convertSnakeObjectToCamel(JSON.parse(v)))
     } catch (e) {
         satoriError(`Failed to parse response: ${v}`)
