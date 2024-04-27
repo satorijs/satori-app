@@ -3,11 +3,11 @@ import { useEffect } from "react";
 import { create } from "zustand";
 
 interface Config {
-
+    mergeMessage: boolean
 }
 
 const defaultConfig: Config = {
-
+    mergeMessage: true
 }
 
 export const useConfig = create<{
@@ -26,7 +26,7 @@ export const initConfigStore = () => {
             if (value) {
                 setConfig(JSON.parse(value))
             } else {
-                setConfig({})
+                setConfig(defaultConfig)
             }
         })
     }, [])
@@ -42,6 +42,12 @@ export const initConfigStore = () => {
 }
 
 export const useConfigKey = <T extends keyof Config>(key: T) => {
-    const { config, setConfig } = useConfig(e=>e.config?.[key])
-    return [config, setConfig] as [Config[T], (value: Config[T]) => void]
+    return useConfig(e => [e.config?.[key] ?? defaultConfig[key],
+    (value: Config[T]) => {
+        e.setConfig({
+            ...e.config,
+            [key]: value
+        })
+    }
+    ] as const)
 }

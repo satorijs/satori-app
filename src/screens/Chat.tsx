@@ -13,6 +13,7 @@ import Clipboard from "@react-native-clipboard/clipboard"
 import { create } from "zustand"
 import Animated, { Easing, FadeIn, Keyframe, LinearTransition, useSharedValue, withTiming } from "react-native-reanimated"
 import { LoginSelector } from "../components/LoginSelectorMenu";
+import { useConfigKey } from "../globals/config";
 
 const useReplyTo = create<{
     replyTo: SaMessage | null,
@@ -148,6 +149,27 @@ export const Chat = ({
     const [curLogin, setChosenLogin] = useState(login?.[0] ?? null)
     const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
+    const [mergeMessage] = useConfigKey('mergeMessage')
+
+    const mergeMessages = (msgs: SaMessage[]) => {
+        const newMsgs = []
+        for (const msg of msgs) {
+            if (newMsgs.length === 0) {
+                newMsgs.push(msg)
+                continue
+            }
+
+            const lastMsg = newMsgs[newMsgs.length - 1]
+            if (lastMsg.user.id === msg.user.id && lastMsg.content === msg.content) {
+                continue
+            } else {
+                newMsgs.push(msg)
+            }
+        }
+
+        return newMsgs
+    }
+
     useEffect(() => {
         if (!satori) return;
 
@@ -160,9 +182,12 @@ export const Chat = ({
     useEffect(() => {
         console.log('update messages')
         satori.bot(curLogin).getMessageListSAS(route.params.channelId).then(v => {
+            if (mergeMessage) {
+                v = mergeMessages(v)
+            }
             setMessages(v)
         })
-    }, [])
+    }, [mergeMessage])
 
     useEffect(() => {
         if (!satori) return
@@ -176,6 +201,9 @@ export const Chat = ({
             if (e?.message && e?.channel?.id === route.params.channelId) {
                 setMessages(v => {
                     v.unshift(e.message)
+                    if (mergeMessage) 
+                        return mergeMessages(v)
+                    
                     return [...v]
                 })
             }
@@ -291,7 +319,7 @@ export const Chat = ({
                 flexDirection: 'row',
                 height: "auto"
             }}>
-                <Pressable onPress={()=>{
+                <Pressable onPress={() => {
                     setLoginSelectorVisible(true)
                 }} style={{
                     flexDirection: 'row',
