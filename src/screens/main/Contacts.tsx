@@ -8,6 +8,7 @@ import { StackParamList } from "../../globals/navigator"
 import Element from "../../satori/element"
 import { toPreviewString } from "../../components/elements/elements"
 import { Contact } from "../../satori/sas"
+import { Dict } from "cosmokit"
 
 export const Contacts = ({ navigation }: {
     navigation: NavigationProp<StackParamList>
@@ -21,12 +22,11 @@ export const Contacts = ({ navigation }: {
     }, [login])
 
     const satori = useSatori()
-    const [contacts, setContacts] = useState<List<Contact>>({
-        data: [],
-        next: 'unknown'
-    })
+    const [contacts, setContacts] = useState<{
+        [key: string]: Contact
+    }>({})
 
-    const sortedContacts = useMemo(() => contacts.data.sort((a, b) => {
+    const sortedContacts = useMemo(() => Object.values(contacts).sort((a, b) => {
         if (a.updateTime === undefined) return 1
         if (b.updateTime === undefined) return -1
         return new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()

@@ -145,7 +145,9 @@ export interface Methods {
 
     // SAS
     appLogin(platform: string, config: Dict): Promise<void>
-    getContactList(next?: string): Promise<List<Contact>>
+    getContactList(next?: string): Promise<{
+        [key: string]: Contact
+    }>
     getLoginList(next?: string): Promise<List<Login>>
     getMessageList(channelId: string, next?: string): Promise<List<Message>>
     getLoginIter(): AsyncIterable<Login>
