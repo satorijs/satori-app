@@ -22,6 +22,7 @@ import { Main as MainScreen } from './src/screens/Main';
 import { Stack } from './src/globals/navigator';
 import { Chat } from './src/screens/Chat';
 import { ConnectToSatori } from './src/screens/connection/Satori';
+import { initConfigStore } from './src/globals/config';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
 
@@ -59,6 +60,8 @@ function App(): React.JSX.Element {
 export default function Main() {
   const colorScheme = useColorScheme();
   const { theme } = useMaterial3Theme();
+
+  initConfigStore();
 
   const paperTheme =
     colorScheme === 'dark'

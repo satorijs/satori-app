@@ -16,6 +16,7 @@
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-native-camera-roll/camera-roll": "^7.5.2",
     "@react-native-clipboard/clipboard": "^1.14.0",
+    "@react-navigation/material-bottom-tabs": "^6.2.28",
     "@react-navigation/native": "^6.1.17",
     "@react-navigation/native-stack": "^6.9.26",
     "@stream-io/flat-list-mvcp": "^0.10.3",
