@@ -68,7 +68,7 @@ export const Methods: Dict<Method> = {
     'friend.approve': Method('handleFriendRequest', ['message_id', 'approve', 'comment']),
     'guild.approve': Method('handleGuildRequest', ['message_id', 'approve', 'comment']),
     'guild.member.approve': Method('handleGuildMemberRequest', ['message_id', 'approve', 'comment']),
-    'app/contact.list': Method('getContactList', ['next']),
+    'app/contact.get': Method('getContactList', []),
     'app/login.list': Method('getLoginList', ['next']),
     'app/login': Method('appLogin', ['platform', 'config']),
     'app/message.list': Method('getMessageList', ['channel_id', 'next']),

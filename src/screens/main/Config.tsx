@@ -12,6 +12,9 @@ export const Config = () => {
             marginTop: 60,
             fontWeight: '500',
         }}>
-            设置</Text>
+            设置
+        </Text>
+
+        
     </View>
 }
