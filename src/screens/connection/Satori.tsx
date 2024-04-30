@@ -29,7 +29,7 @@ export const ConnectToSatori = ({ navigation }: {
 
     const satori = useSatori();
 
-    const login = () => satori.bot.appLogin('satori', {
+    const login = () => satori.bot().appLogin('satori', {
         endpoint: 'http://' + connection.server,
         token: connection.token,
     })
