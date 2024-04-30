@@ -4,10 +4,6 @@ import { create } from "zustand";
 import { Event as SatoriEvent, Login, asyncIterToArr } from "../satori/protocol";
 import { useEffect } from "react";
 
-export const useSatoriConnectionInfo = () => usePersistStorage('@connectionInfo', () => defaultConnectionInfo, {
-    sensitive: {}
-})
-
 const _useSatoriConnection = create<{
     connection: SatoriConnection | null,
     setConnection: (connection?: SatoriConnection) => void
@@ -17,7 +13,6 @@ const _useSatoriConnection = create<{
 }))
 
 export const useSatori = () => {
-    const [info] = useSatoriConnectionInfo()
     const { connection, setConnection } = _useSatoriConnection()
     if (connection === null) {
         setConnection(new SatoriConnection({
@@ -51,10 +46,19 @@ export const useLogins = () => {
         })
     }, [satori])
 
+
+
+    return login
+}
+
+export const initUseLogins = () => {
+    const satori = useSatori()
+    const { login, setLogin } = _useLogin()
     useEffect(() => {
-        if (!satori) return
-        const h = satori.addListener('message', (e: SatoriEvent)=>{
-            if (e.type === 'app-login') {
+        if (satori === null) return
+        const l = satori.addListener('message', (evt: SatoriEvent) => {
+            console.log('message', evt.type)
+            if (evt.type === 'login-added') {
                 asyncIterToArr(satori.bot().getLoginIter()).then(v => {
                     console.log('get login', v)
                     setLogin(v)
@@ -63,10 +67,8 @@ export const useLogins = () => {
         })
 
         return () => {
-            h.remove()
+            console.log('remove listener')
+            l.remove()
         }
     }, [satori])
-
-    return login
 }
-

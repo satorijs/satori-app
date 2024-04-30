@@ -1,5 +1,4 @@
 import { ActivityIndicator, Alert, Text, ToastAndroid, View } from "react-native"
-import { useSatoriConnectionInfo } from "../globals/satori"
 import { memo, useEffect, useState } from "react";
 import { Button, Card, Icon, IconButton, MD3Colors, TextInput } from 'react-native-paper';
 import { ConnectionInfo } from "../satori/connection";
@@ -29,8 +28,8 @@ const ConnectCard = memo(({
         opacity: disabled ? 0.6 : 1,
         shadowOpacity: disabled ? 0 : 0.2,
     }}
-        disabled={disabled}
-        onPress={onPress}>
+        onPress={onPress}
+        disabled={disabled}>
         <View style={{
             flexDirection: 'row',
             gap: 10,
@@ -56,11 +55,8 @@ const ConnectCard = memo(({
 export const Login = ({ navigation }: {
     navigation: NavigationProp<StackParamList>
 }) => {
-    const [connection, setConnection, restored] = useSatoriConnectionInfo();
-
     const [connecting, setConnecting] = useState(false);
-
-    if (!restored) return <ActivityIndicator size="large" color="#0000ff" />
+    
     return <View style={{ flex: 1, alignItems: 'flex-start', marginHorizontal: 40 }}>
         <Text style={{
             fontSize: 40,
@@ -86,6 +82,16 @@ export const Login = ({ navigation }: {
             description="连接至远程 Satori (App) Server"
         />
 
+
+        <ConnectCard
+            onPress={() => {
+                navigation.navigate('ConnectToDiscord')
+            }}
+            name="Discord"
+            icon="discord"
+            description="连接至 Discord 用户/Bot"
+        />
+
         <ConnectCard
             onPress={() => {
                 ToastAndroid.show('未完成', ToastAndroid.SHORT)
@@ -106,14 +112,5 @@ export const Login = ({ navigation }: {
             disabled
         />
 
-        <ConnectCard
-            onPress={() => {
-                ToastAndroid.show('未完成', ToastAndroid.SHORT)
-            }}
-            name="Discord"
-            icon="discord"
-            description="连接至 Discord 用户/Bot"
-            disabled
-        />
     </View>
 }

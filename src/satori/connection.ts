@@ -29,6 +29,7 @@ export const validateConnectionInfo = (connectionInfo: ConnectionInfo) => !(conn
 
 
 const wrapInheritAll = (evt: any) => {
+    if(!evt['message']) return;
     for (const key in evt) {
         if (key !== 'message') evt['message'][key] ??= evt[key]
     }
@@ -52,12 +53,13 @@ export class SatoriConnection extends EventEmitter {
 
         this.ws.onMessage((ev) => {
             const data: GatewayPayloadStructure<any> = JSON.parse(ev.data);
-
+            // console.log(data)
             if (data.op === Opcode.EVENT) {
                 const dataEvent = data as GatewayPayloadStructure<Opcode.EVENT>
                 if (dataEvent.body.id !== undefined) {
                     this.lastId = dataEvent.body.id;
                 }
+                console.log(dataEvent.body.type)
                 this.emit('message', wrapInheritAll(data.body));
             }
         });

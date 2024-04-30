@@ -23,6 +23,8 @@ import { Stack } from './src/globals/navigator';
 import { Chat } from './src/screens/Chat';
 import { ConnectToSatori } from './src/screens/connection/Satori';
 import { initConfigStore } from './src/globals/config';
+import { ConnectToDiscord } from './src/screens/connection/Discord';
+import { initUseLogins } from './src/globals/satori';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
 
@@ -47,10 +49,14 @@ function App(): React.JSX.Element {
           component={Chat}
         />
 
-        {/* Connect to adaptors */}
+        {/* Connect for adaptors */}
         <Stack.Screen
           name="ConnectToSatori"
           component={ConnectToSatori}
+        />
+        <Stack.Screen
+          name="ConnectToDiscord"
+          component={ConnectToDiscord}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -62,6 +68,7 @@ export default function Main() {
   const { theme } = useMaterial3Theme();
 
   initConfigStore();
+  initUseLogins()
 
   const paperTheme =
     colorScheme === 'dark'

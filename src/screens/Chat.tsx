@@ -57,7 +57,7 @@ const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: Bot
                     gap: 10,
                 }}>
                     {message.user ? <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
-                        <Text>{message.user.name ?? message.user.id}</Text></> : <Text>Unknown user</Text>}
+                        <Text>{message.member?.name || message.user?.name || message.user.id}</Text></> : <Text>Unknown user</Text>}
                 </View>
                 <Card style={{
                     marginVertical: 8,
@@ -112,7 +112,9 @@ const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: Bot
 ID ${message.id}
 Sender ${inspect(message.user)}
 Channel ${inspect(message.channel)}
-Content ${inspect(content)}`)
+Content ${inspect(content)}
+`)
+                        console.log('inspect', message)
                     }} title="详细信息" />
                 </Menu>
             </>

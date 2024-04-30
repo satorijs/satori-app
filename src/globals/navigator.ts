@@ -14,6 +14,7 @@ export type StackParamList = {
 
     
     ConnectToSatori: undefined;
+    ConnectToDiscord: undefined;
 }
 
 export const Stack = createNativeStackNavigator<StackParamList>();
