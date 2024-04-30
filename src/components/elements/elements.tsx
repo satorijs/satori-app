@@ -22,7 +22,10 @@ export const elementToObject = (e: Element) => {
 }
 
 export const renderElement = (v: any) => (v.type in elementRendererMap)
-    ? React.createElement(elementRendererMap[v.type], v)
+    ? React.createElement(elementRendererMap[v.type], {
+        ...v,
+        key: v.id
+    })
     : <Text>不支持的 Element: {v.type} &nbsp; {JSON.stringify(v)} </Text>
 
 export const toPreviewString = (v: string | any) =>

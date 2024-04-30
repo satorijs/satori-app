@@ -42,7 +42,7 @@ export class SatoriConnection extends EventEmitter {
     lastId: number | null = null;
     private botCache = new Map<string, Methods>();
     constructor(connectionInfo: ConnectionInfo) {
-        super()
+        super(null)
         if (!validateConnectionInfo(connectionInfo)) {
             throw new Error('Invalid connection info')
         }

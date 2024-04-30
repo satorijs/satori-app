@@ -145,8 +145,8 @@ export const Chat = ({
 
     const [refreshing, setRefreshing] = useState(false)
 
-    const login = useLogins()
-    const [curLogin, setChosenLogin] = useState(login?.[0] ?? null)
+    const logins = useLogins()
+    const [curLogin, setChosenLogin] = useState(logins?.[0] ?? null)
     const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
     const [mergeMessage] = useConfigKey('mergeMessage')
@@ -201,9 +201,9 @@ export const Chat = ({
             if (e?.message && e?.channel?.id === route.params.channelId) {
                 setMessages(v => {
                     v.unshift(e.message)
-                    if (mergeMessage) 
+                    if (mergeMessage)
                         return mergeMessages(v)
-                    
+
                     return [...v]
                 })
             }
@@ -332,9 +332,8 @@ export const Chat = ({
                     <LoginSelector anchor={
                         <Avatar.Image source={{ uri: curLogin?.user.avatar }} size={30} />
                     } onSelect={q => {
-                        setChosenLogin(login.find(v => v.selfId === q.selfId) ?? null)
-                    }} visible={loginSelectorVisible} current={curLogin}
-                        onDismiss={() => setLoginSelectorVisible(false)} />
+                        setChosenLogin(q)
+                    }} current={curLogin} logins={logins} />
                 </Pressable>
                 <TextInput multiline value={currentInput} onChangeText={v => setCurrentInput(v)} mode='flat' style={{ backgroundColor: 'transparent', flex: 1 }} />
                 <IconButton

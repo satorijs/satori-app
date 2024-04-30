@@ -1,38 +1,55 @@
 import { Avatar, Menu, Text } from "react-native-paper";
 import { useLogins } from "../globals/satori";
-import { BotInfo } from "../satori/protocol";
+import { BotInfo, Login } from "../satori/protocol";
+import { useEffect, useState } from "react";
+import { Pressable, View } from "react-native";
 
 export const LoginSelector = ({
     anchor,
-    visible,
-    onDismiss,
     onSelect,
     current,
+    logins
 }: {
     anchor: React.ReactNode;
-    visible: boolean;
-    onDismiss: () => void;
-    onSelect: (info: BotInfo) => void;
-    current: BotInfo | null;
+    onSelect: (info: Login) => void;
+    current: Login | null;
+    logins: Login[]
 }) => {
-    const logins = useLogins()
+    const [visible, setVisible] = useState(false)
+
+    useEffect(() => {
+        if (logins && logins.length > 0 && !current) {
+            onSelect(logins[0])
+        }
+
+        if (logins && !logins.some(login => login.selfId === current?.selfId &&
+            login.platform === current?.platform)) {
+            onSelect(logins[0])
+        }
+    }, [logins, current])
 
     return (
         <Menu
+            anchor={
+                <Pressable onPress={() => {
+                    console.log('press')
+                    setVisible(true)
+                }}>
+                    {anchor}
+                </Pressable>
+            }
             visible={visible}
-            onDismiss={onDismiss}
-            anchor={anchor}
+            onDismiss={() => {
+                setVisible(false)
+            }}
         >
             {
                 logins?.map((login) => {
                     return <Menu.Item
                         key={login.selfId}
                         onPress={() => {
-                            onSelect({
-                                selfId: login.selfId,
-                                platform: login.platform,
-                            })
-                            onDismiss()
+                            onSelect(login)
+                            setVisible(visible => !visible)
                         }}
                         title={login.user.name ?? login.selfId}
                         leadingIcon={

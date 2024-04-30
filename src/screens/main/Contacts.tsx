@@ -52,9 +52,6 @@ export const Contacts = ({ navigation }: {
     }}>
         <Text>你好</Text>
         <LoginSelector anchor={
-            <Pressable onPress={() => {
-                setLoginSelectorVisible(true)
-            }}>
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -70,11 +67,11 @@ export const Contacts = ({ navigation }: {
                         marginLeft: 10,
                     }}>{chosenLogin?.selfId}</Text>
                 </View>
-            </Pressable>
+        
         } onSelect={q => setChosenLogin(login.find(v => v.selfId === q.selfId) ?? null)}
-            visible={loginSelectorVisible} current={
+         current={
                 chosenLogin
-            } onDismiss={() => setLoginSelectorVisible(false)} />
+            } logins={login} />
 
         <FlatList
             data={sortedContacts}
