@@ -3,27 +3,49 @@ import { StackParamList } from "../globals/navigator"
 import { Alert, Pressable, ToastAndroid, View } from "react-native"
 import { FlatList } from "react-native-bidirectional-infinite-scroll";
 import { ActivityIndicator, Avatar, Card, Chip, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
-import { memo, useCallback, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
+import { createContext, memo, useCallback, useContext, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
 import { useContactInfo, useLogins, useSatori } from "../globals/satori"
 import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage, BotInfo } from "../satori/protocol"
 import Element from "../satori/element"
 import { elementRendererMap, renderElement, elementToObject, toPreviewString } from "../components/elements/elements"
 import React from "react"
 import Clipboard from "@react-native-clipboard/clipboard"
-import { create } from "zustand"
-import Animated, { Easing, FadeIn, Keyframe, LinearTransition, useFrameCallback, useSharedValue, withTiming } from "react-native-reanimated"
+import { create, createStore, useStore } from "zustand"
+import Animated, { Easing, FadeIn, Keyframe, LinearTransition, getRelativeCoords, measure, useAnimatedRef, useFrameCallback, useSharedValue, withTiming } from "react-native-reanimated"
 import { LoginSelector } from "../components/LoginSelectorMenu";
 import { useConfigKey } from "../globals/config";
 
-const useReplyTo = create<{
-    replyTo: SaMessage | null,
-    setReplyTo: (replyTo: SaMessage | null) => void
-}>(set => ({
-    replyTo: null,
-    setReplyTo: replyTo => set({ replyTo })
-}))
+interface GroupInfo {
+    groupIndex: number
+    groupTotal: number
+}
 
-const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: BotInfo }) => {
+const ChatContext = createContext<ChatStore>(null)
+
+type ChatStore = ReturnType<typeof createChatStore>
+const createChatStore = () => {
+    return createStore<{
+        replyTo: SaMessage | null,
+        setReplyTo: (msg: SaMessage | null) => void,
+        visibleMessages: number[],
+        setVisibleMessages: (v: number[]) => void
+    }>()((set) => ({
+        replyTo: null,
+        setReplyTo: (msg) => {
+            set({
+                replyTo: msg
+            })
+        },
+        visibleMessages: [],
+        setVisibleMessages: (v) => {
+            set({
+                visibleMessages: v
+            })
+        }
+    }))
+}
+
+const Message = memo(({ message, curLogin, index }: { message: SaMessage & GroupInfo, curLogin: BotInfo, index: number }) => {
     const content = useMemo(() => Element.parse(message.content).map(elementToObject), [message]);
     const login = useLogins()
     const isSelf = login?.some(v => v.user.id === message.user.id) ?? false
@@ -35,15 +57,27 @@ const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: Bot
     const [msgStore, setMsgStore] = useState([])
     const satori = useSatori()
 
-    const { setReplyTo } = useReplyTo()
-
-    useFrameCallback((fi)=>{
-        
+    const store = useContext(ChatContext)
+    const setReplyTo = useStore(store, v => v.setReplyTo)
+    const isLastVisible = useStore(store, v => {
+        for (let i = 0; i < message.groupIndex; i++) {
+            if (!v.visibleMessages.includes(i + message.groupIndex - message.groupTotal)) return false
+        }
+        return true
     })
 
-    return <View style={{
+    const refMessageView = useAnimatedRef();
+    // useFrameCallback((fi) => {
+    //     if (isLastVisible) {
+    //         console.log(refMessageView)
+    //         if(refMessageView)
+    //         // getRelativeCoords(refMessageView, 0, 0)?.y
+    //     }
+    // })
+
+    return <Animated.View style={{
         overflow: 'visible'
-    }}>
+    }} ref={refMessageView}>
         <TouchableRipple style={{
             marginVertical: 10,
             alignItems: isSelf ? 'flex-end' : 'baseline',
@@ -60,7 +94,8 @@ const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: Bot
                     flexDirection: isSelf ? 'row-reverse' : 'row',
                     gap: 10,
                 }}>
-                    {message.user ? <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
+                    {message.user && isLastVisible ?
+                     <><Avatar.Image source={{ uri: message.user.avatar }} size={20}/>
                         <Text>{message.member?.name || message.user?.name || message.user.id}</Text></> : <Text>Unknown user</Text>}
                 </View>
                 <Card style={{
@@ -124,7 +159,7 @@ Content ${inspect(content)}
                 </Menu>
             </>
         </TouchableRipple >
-    </View>
+    </Animated.View>
 })
 
 export const Chat = ({
@@ -141,7 +176,7 @@ export const Chat = ({
     const [menuMessage, setMenuMessage] = useState<SaMessage | null>(null)
     const [channelMenuVisible, setChannelMenuVisible] = useState(false)
 
-    const { replyTo, setReplyTo } = useReplyTo()
+    const [replyTo, setReplyTo] = useState<SaMessage | null>(null)
 
     const [refreshing, setRefreshing] = useState(false)
 
@@ -149,7 +184,7 @@ export const Chat = ({
     const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
     const [mergeMessage] = useConfigKey('mergeMessage')
-
+    const chatStore = useRef(createChatStore()).current
     const { contactInfo } = useContactInfo()
     const currentContact = useMemo(() =>
         contactInfo.find(v => v.id === route.params.channelId &&
@@ -190,6 +225,43 @@ export const Chat = ({
         return newMsgs
     }
 
+    const mergedMessages = useMemo(() => {
+        if (!messages) return []
+        if (!mergeMessage) return messages
+        return mergeMessages(messages)
+    }, [messages, mergeMessage])
+
+    const packedMessages = useMemo(() => {
+        const packed = []
+        for (const msg of mergedMessages) {
+            if (packed.length === 0) {
+                packed.push({
+                    user: msg.user,
+                    messages: [msg]
+                })
+                continue
+            }
+
+            const last = packed[packed.length - 1]
+            if (last.user.id === msg.user.id) {
+                last.messages.push(msg)
+            } else {
+                packed.push({
+                    user: msg.user,
+                    messages: [msg]
+                })
+            }
+        }
+
+        return packed.flatMap(v => v.messages.map((msg, i) => {
+            return {
+                ...msg,
+                groupIndex: i,
+                groupTotal: v.messages.length
+            }
+        }))
+    }, [mergedMessages])
+
     useEffect(() => {
         if (!satori) return;
 
@@ -202,9 +274,6 @@ export const Chat = ({
     useEffect(() => {
         console.log('update messages')
         satori.bot(curLogin).getMessageListSAS(route.params.channelId, null, 'asc').then(v => {
-            if (mergeMessage) {
-                v = mergeMessages(v)
-            }
             setMessages(v)
         })
     }, [mergeMessage])
@@ -221,9 +290,6 @@ export const Chat = ({
             if (e?.message && e?.channel?.id === route.params.channelId) {
                 setMessages(v => {
                     v.unshift(e.message)
-                    if (mergeMessage)
-                        return mergeMessages(v)
-
                     return [...v]
                 })
             }
@@ -234,166 +300,171 @@ export const Chat = ({
         }
     }, [satori, messages])
 
-    const avatarData = useRef({})
+    const setVisibleMessages = useStore(chatStore, v => v.setVisibleMessages)
 
     if (messages === null) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
     </View>
 
-    return <View style={{ flex: 1, margin: 20 }}>
-        <Menu
-            visible={channelMenuVisible}
-            onDismiss={() => setChannelMenuVisible(false)}
-            anchor={
-                <TouchableRipple onPress={() => setChannelMenuVisible(true)}>
-                    <View style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 10,
-                        paddingBottom: 10
-                    }}>
-                        <Avatar.Image source={{ uri: route.params.avatar }} size={30} />
-                        <Text style={{
-                            fontSize: 19,
-                            fontWeight: '700'
-                        }}>{route.params.name}</Text>
-                    </View>
-                </TouchableRipple>
-            }>
-            <Menu.Item onPress={() => {
-                // setMsgStore(msgStore => {
-                //     msgStore[route.params.channelId] = []
-                //     return { ...msgStore }
-                // })
-            }} title="清除当前聊天数据" />
-        </Menu>
-        <FlatList
-            removeClippedSubviews
-            enableAutoscrollToTop
-            maxToRenderPerBatch={5}
-            windowSize={8}
-            data={messages}
-            inverted
-            // maintainVisibleContentPosition={{
-            //     minIndexForVisible: 1,
-            //     autoscrollToTopThreshold: 10
-            // }}
-            refreshing={refreshing}
-            onEndReached={async () => {
-                setRefreshing(true)
-                const v = await satori.bot(curLogin).getMessageListSAS(route.params.channelId, messages[messages.length - 1].id, 'desc')
-                console.log(v)
-                setMessages(v.concat(messages))
-                setRefreshing(false)
-            }}
-            onStartReached={async () => {
-
-            }}
-            style={{
-                flex: 1
-            }}
-            renderItem={({ item }) =>
-                <View onLayout={e => {
-                    // console.log('layout', e.nativeEvent.layout)
-                }}>
-                    <Message message={item} curLogin={curLogin} />
-                </View>}
-
-            onScroll={(e) => {
-                console.log('scroll', e.nativeEvent.contentOffset.y)
-                // get the current displayed messages
-
-                // console.log('messages', e.currentTarget.)
-
-            }}
-        />
-
-
-        <View style={{
-            flexDirection: 'column',
-            height: 'auto'
-        }}>
-            {
-                replyTo && <View style={{
-                    flexDirection: 'row',
-                    height: 70,
-                    marginTop: 10
-                }}>
-                    <Card style={{
-                        borderRadius: 20,
-                        flexDirection: 'column'
-                    }} onPress={() => setReplyTo(null)} mode="contained">
+    return <ChatContext.Provider value={chatStore}>
+        <View style={{ flex: 1, margin: 20 }}>
+            <Menu
+                visible={channelMenuVisible}
+                onDismiss={() => setChannelMenuVisible(false)}
+                anchor={
+                    <TouchableRipple onPress={() => setChannelMenuVisible(true)}>
                         <View style={{
-                            paddingTop: 15,
-                            paddingHorizontal: 15
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 10,
+                            paddingBottom: 10
                         }}>
-                            <View style={{
-                                flexDirection: 'row',
-                                gap: 10
-                            }}>
-                                <Icon source='reply' size={20} />
-                                <Avatar.Image source={{ uri: replyTo.user?.avatar }} size={20} />
-                                <Text>{replyTo.user?.name ?? replyTo.user?.id}</Text>
-                            </View>
-
-                            <Text>{toPreviewString(replyTo.content)}</Text>
+                            <Avatar.Image source={{ uri: route.params.avatar }} size={30} />
+                            <Text style={{
+                                fontSize: 19,
+                                fontWeight: '700'
+                            }}>{route.params.name}</Text>
                         </View>
-                    </Card>
+                    </TouchableRipple>
+                }>
+                <Menu.Item onPress={() => {
+                    // setMsgStore(msgStore => {
+                    //     msgStore[route.params.channelId] = []
+                    //     return { ...msgStore }
+                    // })
+                }} title="清除当前聊天数据" />
+            </Menu>
+            <FlatList
+                removeClippedSubviews
+                enableAutoscrollToTop
+                maxToRenderPerBatch={5}
+                windowSize={8}
+                data={packedMessages}
+                inverted
+                // maintainVisibleContentPosition={{
+                //     minIndexForVisible: 1,
+                //     autoscrollToTopThreshold: 10
+                // }}
+                onViewableItemsChanged={e => {
+                    setVisibleMessages(e.viewableItems.map(v => v.index))
+                }}
+                refreshing={refreshing}
+                onEndReached={async () => {
+                    setRefreshing(true)
+                    const v = await satori.bot(curLogin).getMessageListSAS(route.params.channelId, messages[messages.length - 1].id, 'desc')
+                    console.log(v)
+                    setMessages(v.concat(messages))
+                    setRefreshing(false)
+                }}
+                onStartReached={async () => {
 
-                </View>
-            }
+                }}
+                style={{
+                    flex: 1
+                }}
+                renderItem={({ item, index }) =>
+                    <View onLayout={e => {
+                        // console.log('layout', e.nativeEvent.layout)
+                    }}>
+                        <Message message={item} curLogin={curLogin} index={index} />
+                    </View>}
+
+                onScroll={(e) => {
+                    // console.log('scroll', e.nativeEvent.contentOffset.y)
+                    // get the current displayed messages
+
+                    // console.log('messages', e.currentTarget.)
+
+                }}
+            />
+
 
             <View style={{
-                flexDirection: 'row',
-                height: "auto"
+                flexDirection: 'column',
+                height: 'auto'
             }}>
-                <Pressable onPress={() => {
-                    setLoginSelectorVisible(true)
-                }} style={{
+                {
+                    replyTo && <View style={{
+                        flexDirection: 'row',
+                        height: 70,
+                        marginTop: 10
+                    }}>
+                        <Card style={{
+                            borderRadius: 20,
+                            flexDirection: 'column'
+                        }} onPress={() => setReplyTo(null)} mode="contained">
+                            <View style={{
+                                paddingTop: 15,
+                                paddingHorizontal: 15
+                            }}>
+                                <View style={{
+                                    flexDirection: 'row',
+                                    gap: 10
+                                }}>
+                                    <Icon source='reply' size={20} />
+                                    <Avatar.Image source={{ uri: replyTo.user?.avatar }} size={20} />
+                                    <Text>{replyTo.user?.name ?? replyTo.user?.id}</Text>
+                                </View>
+
+                                <Text>{toPreviewString(replyTo.content)}</Text>
+                            </View>
+                        </Card>
+
+                    </View>
+                }
+
+                <View style={{
                     flexDirection: 'row',
-                    alignItems: 'center',
-                    alignContent: 'center',
-                    marginTop: 10,
-                    marginBottom: 10,
-                    marginRight: 10
+                    height: "auto"
                 }}>
-                    <LoginSelector anchor={
-                        <Avatar.Image source={{ uri: curLogin?.user.avatar }} size={30} />
-                    } onSelect={q => {
-                        setChosenLogin(q)
-                    }} current={curLogin} logins={logins} />
-                </Pressable>
-                <TextInput multiline value={currentInput} onChangeText={v => setCurrentInput(v)} mode='flat' style={{ backgroundColor: 'transparent', flex: 1 }} />
-                <IconButton
-                    icon='send'
-                    mode="contained"
-                    disabled={false && currentInput === ''}
-                    onPress={async () => {
-                        //setSendingMessage(true)
-                        let elems = [Element.text(currentInput)]
-                        if (replyTo) {
-                            elems.unshift(Element.jsx('quote', {
-                                id: replyTo.id
-                            }))
-                            setReplyTo(null)
-                        }
+                    <Pressable onPress={() => {
+                        setLoginSelectorVisible(true)
+                    }} style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        alignContent: 'center',
+                        marginTop: 10,
+                        marginBottom: 10,
+                        marginRight: 10
+                    }}>
+                        <LoginSelector anchor={
+                            <Avatar.Image source={{ uri: curLogin?.user.avatar }} size={30} />
+                        } onSelect={q => {
+                            setChosenLogin(q)
+                        }} current={curLogin} logins={logins} />
+                    </Pressable>
+                    <TextInput multiline value={currentInput} onChangeText={v => setCurrentInput(v)} mode='flat' style={{ backgroundColor: 'transparent', flex: 1 }} />
+                    <IconButton
+                        icon='send'
+                        mode="contained"
+                        disabled={false && currentInput === ''}
+                        onPress={async () => {
+                            //setSendingMessage(true)
+                            let elems = [Element.text(currentInput)]
+                            if (replyTo) {
+                                elems.unshift(Element.jsx('quote', {
+                                    id: replyTo.id
+                                }))
+                                setReplyTo(null)
+                            }
 
-                        console.log('sendMsg', JSON.stringify(elems, null, 4), elems.map(v => v.toString()).join(''))
+                            console.log('sendMsg', JSON.stringify(elems, null, 4), elems.map(v => v.toString()).join(''))
 
-                        satori.bot(curLogin).createMessage(route.params.channelId,
-                            elems.map(v => v.toString(true)).join(''),
-                            route.params.guildId)
-                            .catch(e => {
-                                Alert.alert('发送失败', e.message)
-                            })
+                            satori.bot(curLogin).createMessage(route.params.channelId,
+                                elems.map(v => v.toString(true)).join(''),
+                                route.params.guildId)
+                                .catch(e => {
+                                    Alert.alert('发送失败', e.message)
+                                })
 
-                        setCurrentInput('')
-                        //setSendingMessage(false)
-                    }}
-                    loading={sendingMessage}
-                />
+                            setCurrentInput('')
+                            //setSendingMessage(false)
+                        }}
+                        loading={sendingMessage}
+                    />
+                </View>
             </View>
         </View>
-    </View>
+    </ChatContext.Provider>
 }
