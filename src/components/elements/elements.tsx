@@ -36,3 +36,32 @@ export const toPreviewString = (v: string | any) =>
         if (v.type === 'at') return `@${v.name ?? v.id}`
         return '[未知]'
     }).join(' ')
+
+export const renderElements = (v: Element[]) => {
+    const textElements = ['text', 'at']
+
+    const result: {
+        isText: boolean,
+        elements: Element[]
+    }[] = []
+
+    for (const e of v) {
+        const isText = textElements.includes(e.type)
+        if (result[result.length - 1]?.isText && isText) {
+            result[result.length - 1].elements.push(e)
+        } else {
+            result.push({
+                isText,
+                elements: [e]
+            })
+        }
+    }
+
+    return result.map(({ isText, elements }) => {
+        if (isText) {
+            return <Text>{elements.map(renderElement)}</Text>
+        } else {
+            return renderElement(elements[0])
+        }
+    })
+}

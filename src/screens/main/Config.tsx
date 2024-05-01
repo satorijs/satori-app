@@ -1,13 +1,66 @@
 import { View, Text } from "react-native"
-import { List } from "react-native-paper"
+import { List, Menu } from "react-native-paper"
 import { useGlobalStackNavigation } from "../../globals/navigator"
 import { MaterialSwitchListItem } from "../../components/material-switch/MaterialSwitchListItem"
 import { useConfigKey } from "../../globals/config"
+import { useState } from "react"
+
+const bubbleTypeMap = {
+    'material': 'Material You',
+    'none': '无'
+}
+
+const avatarTypeMap = {
+    'full': '完整',
+    'first': '首条消息',
+    'none': '不显示'
+}
+
+const ListMenuItem = ({ defaultValue, setValue, values, title }: {
+    defaultValue: string,
+    setValue: (value: string) => void,
+    values: {
+        [key: string]: string
+    },
+    title?: string
+}) => {
+    const [visible, setVisible] = useState(false)
+    const [value, setValue2] = useState(defaultValue)
+
+    return <List.Item
+        title={title}
+        onPress={() => setVisible(true)}
+        right={() => <Menu
+            anchor={
+                <Text>{values[value]}</Text>
+            }
+            anchorPosition="bottom"
+            visible={visible}
+            onDismiss={() => setVisible(false)}
+        >
+            {
+                Object.entries(values).map(([key, value]) => {
+                    return <Menu.Item
+                        key={key}
+                        onPress={() => {
+                            setValue(key)
+                            setValue2(key)
+                            setVisible(false)
+                        }}
+                        title={value}
+                    />
+                })
+            }
+        </Menu>}
+    />
+}
 
 export const Config = () => {
     const { navigation } = useGlobalStackNavigation()
 
     const [mergeMessage, setMergeMessage] = useConfigKey('mergeMessage')
+    const [bubbleType, setBubbleType] = useConfigKey('bubbleType')
+    const [avatarType, setAvatarType] = useConfigKey('avatarType')
 
     return <View style={{
         marginHorizontal: 20,
@@ -27,8 +80,8 @@ export const Config = () => {
             style={{
                 marginLeft: 14
             }}
-            left={()=><List.Icon icon='account' />}
-            onPress={()=>{
+            left={() => <List.Icon icon='account' />}
+            onPress={() => {
                 navigation.navigate('Login')
             }}
             title="登录新账号" />
@@ -40,6 +93,18 @@ export const Config = () => {
             onPress={() => {
                 setMergeMessage(!mergeMessage)
             }}
-            />
+        />
+
+        <ListMenuItem
+            title="气泡样式"
+            defaultValue={bubbleType}
+            setValue={setBubbleType}
+            values={bubbleTypeMap} />
+
+        <ListMenuItem
+            title="头像显示"
+            defaultValue={avatarType}
+            setValue={setAvatarType}
+            values={avatarTypeMap} />
     </View>
 }

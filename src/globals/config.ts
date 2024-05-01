@@ -3,11 +3,15 @@ import { useEffect } from "react";
 import { create } from "zustand";
 
 interface Config {
-    mergeMessage: boolean
+    mergeMessage: boolean;
+    avatarType: 'full' | 'first' | 'none';
+    bubbleType: 'material' | 'none';
 }
 
 const defaultConfig: Config = {
-    mergeMessage: true
+    mergeMessage: true,
+    avatarType: 'first',
+    bubbleType: 'material'
 }
 
 export const useConfig = create<{

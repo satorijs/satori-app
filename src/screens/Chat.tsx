@@ -3,11 +3,11 @@ import { StackParamList } from "../globals/navigator"
 import { Alert, Pressable, ToastAndroid, View } from "react-native"
 import { FlatList } from "react-native-bidirectional-infinite-scroll";
 import { ActivityIndicator, Avatar, Card, Chip, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
-import { createContext, memo, useCallback, useContext, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
+import { createContext, createElement, memo, useCallback, useContext, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
 import { useContactInfo, useLogins, useSatori } from "../globals/satori"
 import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage, BotInfo } from "../satori/protocol"
 import Element from "../satori/element"
-import { elementRendererMap, renderElement, elementToObject, toPreviewString } from "../components/elements/elements"
+import { elementRendererMap, renderElement, elementToObject, toPreviewString, renderElements } from "../components/elements/elements"
 import React from "react"
 import Clipboard from "@react-native-clipboard/clipboard"
 import { create, createStore, useStore } from "zustand"
@@ -59,27 +59,20 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
 
     const store = useContext(ChatContext)
     const setReplyTo = useStore(store, v => v.setReplyTo)
-    const isLastVisible = useStore(store, v => {
-        for (let i = 0; i < message.groupIndex; i++) {
-            if (!v.visibleMessages.includes(i + message.groupIndex - message.groupTotal)) return false
-        }
-        return true
-    })
 
-    const refMessageView = useAnimatedRef();
-    // useFrameCallback((fi) => {
-    //     if (isLastVisible) {
-    //         console.log(refMessageView)
-    //         if(refMessageView)
-    //         // getRelativeCoords(refMessageView, 0, 0)?.y
-    //     }
-    // })
+    const [bubbleType, setBubbleType] = useConfigKey('bubbleType')
+    const [avatarType, setAvatarType] = useConfigKey('avatarType')
+    const isFirstMsg = message.groupIndex === message.groupTotal - 1
+    const isLastMsg = message.groupIndex === 0
+    const avatarVisible = (avatarType === 'first' && isFirstMsg) ||
+        (avatarType === 'full')
 
-    return <Animated.View style={{
+    const bubbleComponent = bubbleType === 'material' ? Card : View
+
+    return <View style={{
         overflow: 'visible'
-    }} ref={refMessageView}>
+    }}>
         <TouchableRipple style={{
-            marginVertical: 10,
             alignItems: isSelf ? 'flex-end' : 'baseline',
             height: 'auto'
         }} onPress={e => {
@@ -90,24 +83,28 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
             setMenuVisible(true)
         }}>
             <>
-                <View style={{
-                    flexDirection: isSelf ? 'row-reverse' : 'row',
-                    gap: 10,
-                }}>
-                    {message.user && isLastVisible ?
-                     <><Avatar.Image source={{ uri: message.user.avatar }} size={20}/>
-                        <Text>{message.member?.name || message.user?.name || message.user.id}</Text></> : <Text>Unknown user</Text>}
-                </View>
-                <Card style={{
-                    marginVertical: 8,
-                    paddingHorizontal: 15,
-                    padding: 10,
-                    borderRadius: 20
-                }}>
-                    {
-                        content.map(renderElement)
-                    }
-                </Card>
+                {
+                    avatarVisible && <View style={{
+                        flexDirection: isSelf ? 'row-reverse' : 'row',
+                        gap: 10,
+                        marginTop: 10
+                    }}>
+                        {message.user ?
+                            <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
+                                <Text>{message.member?.name || message.user?.name || message.user.id}</Text></> : <Text>Unknown user</Text>}
+                    </View>
+                }
+
+                {
+                    createElement(bubbleComponent, {
+                        style: {
+                            marginVertical: avatarVisible ? 8 : 0,
+                            paddingHorizontal: 15,
+                            paddingVertical: bubbleType === 'none' ? 0 : 10,
+                            borderRadius: 20
+                        }
+                    }, renderElements(content))
+                }
 
                 <Menu
                     anchor={menuAnchor}
@@ -159,7 +156,7 @@ Content ${inspect(content)}
                 </Menu>
             </>
         </TouchableRipple >
-    </Animated.View>
+    </View>
 })
 
 export const Chat = ({
@@ -194,7 +191,6 @@ export const Chat = ({
 
     const allLogins = useLogins()
     const logins = useMemo(() => {
-        console.log(currentContact?.whoIsHere)
         if (!currentContact) return []
         return allLogins.filter(v =>
             // v.platform === route.params.platform &&
