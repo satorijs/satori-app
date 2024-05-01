@@ -71,7 +71,7 @@ export const Methods: Dict<Method> = {
     'app/contact.get': Method('getContactList', []),
     'app/login.list': Method('getLoginList', ['next']),
     'app/login': Method('appLogin', ['platform', 'config']),
-    'app/message.get': Method('getMessageListSAS', ['channel_id', 'cursor', 'direction']),
+    'app/message.get': Method('getMessageListSAS', ['channel_id', 'message_id', 'direction']),
 }
 
 export interface List<T> {
@@ -145,12 +145,10 @@ export interface Methods {
 
     // SAS
     appLogin(platform: string, config: Dict): Promise<void>
-    getContactList(next?: string): Promise<{
-        [key: string]: Contact
-    }>
+    getContactList(next?: string): Promise<Contact[]>
     getLoginList(next?: string): Promise<List<Login>>
     getMessageListSAS(channelId: string, 
-        cursor?: string,
+        messageId?: string,
         direction?: 'asc' | 'desc',
         ): Promise<Message[]>
     getLoginIter(): AsyncIterable<Login>
@@ -207,7 +205,7 @@ const convertSnakeObjectToCamel = (obj: object) => {
     if (obj === null || typeof obj !== 'object') {
         return obj
     }
-    const newObj: Dict = {}
+    const newObj: Dict = obj instanceof Array ? [] : {}
     for (const key in obj) {
         const res = convertSnakeObjectToCamel(obj[key])
         newObj[convertSnakeToCamel(key)] = res
@@ -313,7 +311,7 @@ export const callMethodAsync = async (method: string, args: object, connectionIn
     const v = await res.text()
     try {
         console.log(method, '=> response', res.status, res.statusText)
-        return fixArrays(convertSnakeObjectToCamel(JSON.parse(v)))
+        return convertSnakeObjectToCamel(JSON.parse(v))
     } catch (e) {
         satoriError(`Failed to parse response: ${v}`)
     }

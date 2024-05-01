@@ -1,7 +1,7 @@
 import { NavigationProp } from "@react-navigation/native"
 import { FlatList, View, RefreshControl, Pressable } from "react-native"
 import { ActivityIndicator, Avatar, Button, Text, TouchableRipple } from "react-native-paper"
-import { useLogins, useSatori } from "../../globals/satori"
+import { useContactInfo, useLogins, useSatori } from "../../globals/satori"
 import { useEffect, useMemo, useState } from "react"
 import { Event, Guild, List } from "../../satori/protocol"
 import { StackParamList } from "../../globals/navigator"
@@ -23,25 +23,28 @@ export const Contacts = ({ navigation }: {
     }, [login])
 
     const satori = useSatori()
-    const [contacts, setContacts] = useState<{
-        [key: string]: Contact
-    }>({})
+    const {
+        contactInfo, setContactInfo
+    } = useContactInfo()
 
-    const sortedContacts = useMemo(() => Object.values(contacts).sort((a, b) => {
+    
+
+    const sortedContacts = useMemo(() => Object.values(contactInfo).sort((a, b) => {
         if (a.updateTime === undefined) return 1
         if (b.updateTime === undefined) return -1
         return new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()
-    }), [contacts])
+    }), [contactInfo])
 
     const [chosenLogin, setChosenLogin] = useState(login?.[0] ?? null)
     const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
     const [refreshing, setRefreshing] = useState(false)
 
+
     useEffect(() => {
         if (satori === null) return
         satori.bot().getContactList().then(v => {
-            setContacts(v)
+            setContactInfo(v)
         })
     }, [satori])
 
@@ -52,24 +55,24 @@ export const Contacts = ({ navigation }: {
     }}>
         <Text>你好</Text>
         <LoginSelector anchor={
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    alignContent: 'center',
-                    marginTop: 10,
-                    marginBottom: 10,
-                }}>
-                    <Avatar.Image source={{
-                        uri: chosenLogin?.user.avatar
-                    }} size={24} />
-                    <Text style={{
-                        fontSize: 24,
-                        marginLeft: 10,
-                    }}>{chosenLogin?.selfId}</Text>
-                </View>
-        
+            <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                alignContent: 'center',
+                marginTop: 10,
+                marginBottom: 10,
+            }}>
+                <Avatar.Image source={{
+                    uri: chosenLogin?.user.avatar
+                }} size={24} />
+                <Text style={{
+                    fontSize: 24,
+                    marginLeft: 10,
+                }}>{chosenLogin?.selfId}</Text>
+            </View>
+
         } onSelect={q => setChosenLogin(login.find(v => v.selfId === q.selfId) ?? null)}
-         current={
+            current={
                 chosenLogin
             } logins={login} />
 
@@ -79,7 +82,7 @@ export const Contacts = ({ navigation }: {
                 <RefreshControl refreshing={refreshing} onRefresh={() => {
                     setRefreshing(true)
                     satori.bot().getContactList().then(v => {
-                        setContacts(v)
+                        setContactInfo(v)
                         setRefreshing(false)
                     })
                 }} />
@@ -89,16 +92,15 @@ export const Contacts = ({ navigation }: {
             }}
             renderItem={({ item }) => {
                 const lastUsername = (item.coverUserNick || item.coverUserName) ?? item.coverUserId
-                // console.log(item)
 
                 return <TouchableRipple onPress={async () => {
-                    // console.log(item)
                     const guild = await satori.bot(chosenLogin).getChannelList(item.id)
                     navigation.navigate('Chat', {
                         guildId: item.id,
                         channelId: guild.data[0].id,
                         name: item.name ?? item.id,
-                        avatar: item.avatar
+                        avatar: item.avatar,
+                        platform: item.platform
                     })
                 }}>
                     <View style={{
@@ -128,7 +130,7 @@ export const Contacts = ({ navigation }: {
                 </TouchableRipple>
             }}
             keyExtractor={(item) => item.id}
-            ListFooterComponent={contacts.next && <ActivityIndicator />}
+            // ListFooterComponent={contactInfo.next && <ActivityIndicator />}
         />
     </View>
 }

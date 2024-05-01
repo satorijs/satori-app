@@ -59,7 +59,7 @@ export class SatoriConnection extends EventEmitter {
                 if (dataEvent.body.id !== undefined) {
                     this.lastId = dataEvent.body.id;
                 }
-                console.log(dataEvent.body.type)
+                // console.log(dataEvent.body.type)
                 this.emit('message', wrapInheritAll(data.body));
             }
         });
@@ -81,6 +81,7 @@ export class SatoriConnection extends EventEmitter {
     }
 
     bot(info: BotInfo = {}) {
+        info ??= {};
         const key = `${info.platform}.${info.selfId}`;
         if (!this.botCache.has(key)) {
             this.botCache.set(key, createAPI({

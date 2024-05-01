@@ -1,8 +1,9 @@
 import { usePersistStorage } from "react-native-use-persist-storage";
 import { ConnectionInfo, SatoriConnection, defaultConnectionInfo, validateConnectionInfo } from "../satori/connection";
 import { create } from "zustand";
-import { Event as SatoriEvent, Login, asyncIterToArr } from "../satori/protocol";
+import { Event as SatoriEvent, Login, asyncIterToArr, Channel } from "../satori/protocol";
 import { useEffect } from "react";
+import { Contact } from "../satori/sas";
 
 const _useSatoriConnection = create<{
     connection: SatoriConnection | null,
@@ -72,3 +73,12 @@ export const initUseLogins = () => {
         }
     }, [satori])
 }
+
+
+export const useContactInfo = create<{
+    contactInfo: Contact[],
+    setContactInfo: (contactInfo: Contact[]) => void
+}>((set, get) => ({
+    contactInfo: [],
+    setContactInfo: (contactInfo: any) => set({ contactInfo })
+}))

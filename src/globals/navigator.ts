@@ -10,6 +10,7 @@ export type StackParamList = {
         guildId: string;
         name: string;
         avatar: string;
+        platform: string;
     },
 
     

@@ -3,15 +3,15 @@ import { StackParamList } from "../globals/navigator"
 import { Alert, Pressable, ToastAndroid, View } from "react-native"
 import { FlatList } from "react-native-bidirectional-infinite-scroll";
 import { ActivityIndicator, Avatar, Card, Chip, Divider, Icon, IconButton, MD3Colors, Menu, Text, TextInput, TouchableRipple } from "react-native-paper"
-import { memo, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
-import { useLogins, useSatori } from "../globals/satori"
+import { memo, useCallback, useEffect, useInsertionEffect, useMemo, useReducer, useRef, useState } from "react"
+import { useContactInfo, useLogins, useSatori } from "../globals/satori"
 import { Channel, Event as SatoriEvent, Guild, List, Message as SaMessage, BotInfo } from "../satori/protocol"
 import Element from "../satori/element"
 import { elementRendererMap, renderElement, elementToObject, toPreviewString } from "../components/elements/elements"
 import React from "react"
 import Clipboard from "@react-native-clipboard/clipboard"
 import { create } from "zustand"
-import Animated, { Easing, FadeIn, Keyframe, LinearTransition, useSharedValue, withTiming } from "react-native-reanimated"
+import Animated, { Easing, FadeIn, Keyframe, LinearTransition, useFrameCallback, useSharedValue, withTiming } from "react-native-reanimated"
 import { LoginSelector } from "../components/LoginSelectorMenu";
 import { useConfigKey } from "../globals/config";
 
@@ -36,6 +36,10 @@ const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: Bot
     const satori = useSatori()
 
     const { setReplyTo } = useReplyTo()
+
+    useFrameCallback((fi)=>{
+        
+    })
 
     return <View style={{
         overflow: 'visible'
@@ -77,6 +81,7 @@ const Message = memo(({ message, curLogin }: { message: SaMessage, curLogin: Bot
                 >
                     <Menu.Item onPress={async () => {
                         setMenuVisible(false)
+
 
                         await satori.bot(curLogin).createMessage(message.channel.id, message.content, message.guild.id)
                     }} title="+1" />
@@ -129,13 +134,6 @@ export const Chat = ({
     route: RouteProp<StackParamList>
 }) => {
     const satori = useSatori()
-    // const [messages, setMessages] = useState<List<SaMessage>>({
-    //     data: [],
-    //     next: 'smth'
-    // })
-    //const [channel, setChannel] = useState<Channel | null>(null)
-    //const [guild, setGuild] = useState<Guild | null>(null)
-
     const [currentInput, setCurrentInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState(false);
     const [messages, setMessages] = useState<SaMessage[]>(null);
@@ -147,11 +145,31 @@ export const Chat = ({
 
     const [refreshing, setRefreshing] = useState(false)
 
-    const logins = useLogins()
-    const [curLogin, setChosenLogin] = useState(logins?.[0] ?? null)
+
     const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
     const [mergeMessage] = useConfigKey('mergeMessage')
+
+    const { contactInfo } = useContactInfo()
+    const currentContact = useMemo(() =>
+        contactInfo.find(v => v.id === route.params.channelId &&
+            v.platform === route.params.platform),
+
+        [contactInfo, route.params.channelId])
+
+    const allLogins = useLogins()
+    const logins = useMemo(() => {
+        console.log(currentContact?.whoIsHere)
+        if (!currentContact) return []
+        return allLogins.filter(v =>
+            // v.platform === route.params.platform &&
+            currentContact?.whoIsHere.includes?.(v.selfId)
+        )
+    },
+        [allLogins, route.params.platform, currentContact])
+    const [curLogin, setChosenLogin] = useState(logins?.[0] ?? null)
+
+
 
     const mergeMessages = (msgs: SaMessage[]) => {
         const newMsgs = []
@@ -183,7 +201,7 @@ export const Chat = ({
 
     useEffect(() => {
         console.log('update messages')
-        satori.bot(curLogin).getMessageListSAS(route.params.channelId).then(v => {
+        satori.bot(curLogin).getMessageListSAS(route.params.channelId, null, 'asc').then(v => {
             if (mergeMessage) {
                 v = mergeMessages(v)
             }
@@ -215,6 +233,8 @@ export const Chat = ({
             l.remove()
         }
     }, [satori, messages])
+
+    const avatarData = useRef({})
 
     if (messages === null) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator />
@@ -249,9 +269,6 @@ export const Chat = ({
             }} title="清除当前聊天数据" />
         </Menu>
         <FlatList
-            onScroll={e => {
-
-            }}
             removeClippedSubviews
             enableAutoscrollToTop
             maxToRenderPerBatch={5}
@@ -265,7 +282,8 @@ export const Chat = ({
             refreshing={refreshing}
             onEndReached={async () => {
                 setRefreshing(true)
-                const v = await satori.bot(curLogin).getMessageListSAS(route.params.channelId, messages[0].id)
+                const v = await satori.bot(curLogin).getMessageListSAS(route.params.channelId, messages[messages.length - 1].id, 'desc')
+                console.log(v)
                 setMessages(v.concat(messages))
                 setRefreshing(false)
             }}
@@ -281,7 +299,16 @@ export const Chat = ({
                 }}>
                     <Message message={item} curLogin={curLogin} />
                 </View>}
+
+            onScroll={(e) => {
+                console.log('scroll', e.nativeEvent.contentOffset.y)
+                // get the current displayed messages
+
+                // console.log('messages', e.currentTarget.)
+
+            }}
         />
+
 
         <View style={{
             flexDirection: 'column',
