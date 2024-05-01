@@ -74,7 +74,8 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
     }}>
         <TouchableRipple style={{
             alignItems: isSelf ? 'flex-end' : 'baseline',
-            height: 'auto'
+            height: 'auto',
+            marginBottom: isLastMsg ? 10 : 0,
         }} onPress={e => {
             setMenuAnchor({
                 x: e.nativeEvent.pageX,
@@ -86,8 +87,7 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
                 {
                     avatarVisible && <View style={{
                         flexDirection: isSelf ? 'row-reverse' : 'row',
-                        gap: 10,
-                        marginTop: 10
+                        gap: 10
                     }}>
                         {message.user ?
                             <><Avatar.Image source={{ uri: message.user.avatar }} size={20} />
@@ -98,7 +98,7 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
                 {
                     createElement(bubbleComponent, {
                         style: {
-                            marginVertical: avatarVisible ? 8 : 0,
+                            marginTop: avatarVisible ? 8 : 6,
                             paddingHorizontal: 15,
                             paddingVertical: bubbleType === 'none' ? 0 : 10,
                             borderRadius: 20
