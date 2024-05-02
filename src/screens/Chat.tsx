@@ -58,7 +58,6 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
         x: number,
         y: number
     } | null>(null)
-    const [msgStore, setMsgStore] = useState([])
     const satori = useSatori()
 
     const store = useContext(ChatContext)
@@ -121,6 +120,10 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
 
                         await satori.bot(curLogin).createMessage(message.channel.id, message.content, message.guild.id)
                     }} title="+1" />
+                    <Menu.Item onPress={async () => {
+                        setMenuVisible(false)
+                        await satori.bot(curLogin).deleteMessage(message.channel.id, message.id)
+                    }} title="撤回" />
                     <Menu.Item onPress={() => {
                         setMenuVisible(false)
 
@@ -130,16 +133,6 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
                         Clipboard.setString(text)
                         // ToastAndroid.show('已复制', ToastAndroid.SHORT)
                     }} title="复制" />
-                    <Menu.Item onPress={() => {
-                        setMenuVisible(false)
-
-                        setMsgStore(msgStore => {
-                            msgStore[message.channel.id] = msgStore[message.channel.id].filter(v => v.id !== message.id)
-                            return { ...msgStore }
-                        })
-
-                        ToastAndroid.show('已删除', ToastAndroid.SHORT)
-                    }} title="删除" />
                     <Menu.Item onPress={() => {
                         setMenuVisible(false)
 
