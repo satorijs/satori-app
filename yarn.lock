@@ -3240,6 +3240,7 @@ __metadata:
     react-native-bidirectional-infinite-scroll: ^0.3.3
     react-native-fast-image: ^8.6.3
     react-native-gesture-handler: ^2.16.0
+    react-native-image-picker: ^7.1.2
     react-native-image-zoom-viewer: ^3.0.1
     react-native-paper: ^5.12.3
     react-native-reanimated: ^3.8.1
@@ -8694,6 +8695,16 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 826ed254d27b079cb985b63c65d0f504f11987b68ae71bac0e1c0e99dc24d5816fc9b8d053eb04737c60c018ad520a1e9c4b99af26952646ccabe9fc2b3bd64f
+  languageName: node
+  linkType: hard
+
+"react-native-image-picker@npm:^7.1.2":
+  version: 7.1.2
+  resolution: "react-native-image-picker@npm:7.1.2"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: af52328b7cb06c28549442f0d923cfa92dde8d5a968a642336df4c882f81adbf0e5e606a14de27f96883a76fa1e03230061c4080011c9107942edebc8e09c478
   languageName: node
   linkType: hard
 
