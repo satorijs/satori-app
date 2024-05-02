@@ -66,10 +66,10 @@ export const Img = ({ src }) => {
                 width, height
             }} resizeMode={FastImage.resizeMode.contain} onLoad={e => {
                 // console.log('onload')
-                const maxWidth = 200, maxHeight = 200
-                const scale =
-                    Math.min(maxWidth / e.nativeEvent.width,
-                        maxHeight / e.nativeEvent.height, 1)
+                const maxWidth = 200, maxHeight = 100
+                const scale = 100 / e.nativeEvent.height
+                    // Math.min(maxWidth / e.nativeEvent.width,
+                    //     maxHeight / e.nativeEvent.height, 1)
                 setWidth(e.nativeEvent.width * scale)
                 setHeight(e.nativeEvent.height * scale)
                 // console.log(e.nativeEvent.source.width * scale, e.nativeEvent.source.height * scale)

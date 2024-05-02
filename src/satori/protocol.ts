@@ -149,7 +149,7 @@ export interface Methods {
     getLoginList(next?: string): Promise<List<Login>>
     getMessageListSAS(channelId: string, 
         messageId?: string,
-        direction?: 'asc' | 'desc',
+        direction?: 'up' | 'down',
         ): Promise<Message[]>
     getLoginIter(): AsyncIterable<Login>
     getContactIter(): AsyncIterable<User>

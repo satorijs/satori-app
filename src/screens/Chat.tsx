@@ -14,6 +14,9 @@ import { create, createStore, useStore } from "zustand"
 import Animated, { Easing, FadeIn, Keyframe, LinearTransition, getRelativeCoords, measure, useAnimatedRef, useFrameCallback, useSharedValue, withTiming } from "react-native-reanimated"
 import { LoginSelector } from "../components/LoginSelectorMenu";
 import { useConfigKey } from "../globals/config";
+import { BidirectionalFlatList } from "../components/bid-list";
+
+const MESSAGE_CTX_WINDOW_SIZE = 50
 
 interface GroupInfo {
     groupIndex: number
@@ -168,10 +171,10 @@ export const Chat = ({
     const satori = useSatori()
     const [currentInput, setCurrentInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState(false);
-    const [messages, setMessages] = useState<SaMessage[]>(null);
 
-    const [menuMessage, setMenuMessage] = useState<SaMessage | null>(null)
-    const [channelMenuVisible, setChannelMenuVisible] = useState(false)
+    // 越往后越老
+    const [messages, setMessages] = useState<SaMessage[]>(null);
+    const [isPresentState, setIsPresentState] = useState(true)
 
     const [replyTo, setReplyTo] = useState<SaMessage | null>(null)
 
@@ -190,14 +193,12 @@ export const Chat = ({
     const logins = useMemo(() => {
         if (!currentContact) return []
         return allLogins.filter(v =>
-            // v.platform === route.params.platform &&
+            v.platform === route.params.platform &&
             currentContact?.whoIsHere.includes?.(v.selfId)
         )
     },
         [allLogins, route.params.platform, currentContact])
     const [curLogin, setChosenLogin] = useState(logins?.[0] ?? null)
-
-
 
     const mergeMessages = (msgs: SaMessage[]) => {
         const newMsgs = []
@@ -256,17 +257,7 @@ export const Chat = ({
     }, [mergedMessages])
 
     useEffect(() => {
-        if (!satori) return;
-
-        // satori.bot.getMessageList(route.params.channelId).then(setMessages)
-        //    satori.bot.getChannel(route.params.channelId).then(setChannel)
-        //    satori.bot.getGuild(route.params.guildId).then(setGuild)
-    }, [satori, route.params])
-
-
-    useEffect(() => {
-        console.log('update messages')
-        satori.bot(curLogin).getMessageListSAS(route.params.channelId, null, 'asc').then(v => {
+        satori.bot(curLogin).getMessageListSAS(route.params.channelId, null, 'up').then(v => {
             setMessages(v)
         })
     }, [mergeMessage])
@@ -274,13 +265,8 @@ export const Chat = ({
     useEffect(() => {
         if (!satori) return
         const l = satori.addListener('message', (e: SatoriEvent) => {
-            // console.log(
-            //     'message',
-            //     e?.message?.content,
-            //     e?.message?.channel?.id,
-            //     route.params.channelId
-            // )
-            if (e?.message && e?.channel?.id === route.params.channelId) {
+
+            if (isPresentState && e?.message && e?.channel?.id === route.params.channelId) {
                 setMessages(v => {
                     v ??= []
                     v.unshift(e.message)
@@ -324,40 +310,48 @@ export const Chat = ({
                     }}>{route.params.name}</Text>
                 </View>
             </TouchableRipple>
-            <FlatList
+            <BidirectionalFlatList
                 removeClippedSubviews
                 enableAutoscrollToTop
                 maxToRenderPerBatch={5}
+                autoscrollToTopThreshold={2}
                 windowSize={8}
                 data={packedMessages}
                 inverted
-                // maintainVisibleContentPosition={{
-                //     minIndexForVisible: 1,
-                //     autoscrollToTopThreshold: 10
-                // }}
+                keyExtractor={v => v.id}
                 onViewableItemsChanged={e => {
                     setVisibleMessages(e.viewableItems.map(v => v.index))
                 }}
                 refreshing={refreshing}
                 onEndReached={async () => {
                     setRefreshing(true)
-                    const v = await satori.bot(curLogin).getMessageListSAS(route.params.channelId, messages[messages.length - 1].id, 'desc')
-                    console.log(v)
-                    setMessages(v.concat(messages))
+                    const v = await satori.bot(curLogin).getMessageListSAS(
+                        route.params.channelId,
+                        messages[messages.length - 1].id,
+                        'up')
+                    setIsPresentState(false)
+                    setMessages([...messages, ...v])
                     setRefreshing(false)
                 }}
                 onStartReached={async () => {
+                    setRefreshing(true)
+                    const v = await satori.bot(curLogin).getMessageListSAS(
+                        route.params.channelId,
+                        messages[0].id,
+                        'down')
 
+                    setRefreshing(false)
+                    if (v.length === 0) {
+                        setIsPresentState(true)
+                        return
+                    }
+                    setMessages([...v, ...messages])
                 }}
                 style={{
                     flex: 1
                 }}
                 renderItem={({ item, index }) =>
-                    <View onLayout={e => {
-                        // console.log('layout', e.nativeEvent.layout)
-                    }}>
-                        <Message message={item} curLogin={curLogin} index={index} />
-                    </View>}
+                    <Message message={item} curLogin={curLogin} index={index} />}
 
                 onScroll={(e) => {
                     // console.log('scroll', e.nativeEvent.contentOffset.y)
@@ -366,6 +360,21 @@ export const Chat = ({
                     // console.log('messages', e.currentTarget.)
 
                 }}
+                FooterLoadingIndicator={
+                    () =>
+                        <ActivityIndicator color={MD3Colors.secondary70} size={30} style={{
+                            position: 'static',
+                            top: 30,
+                            height: 1
+                        }} />
+                }
+                HeaderLoadingIndicator={
+                    () => <ActivityIndicator color={MD3Colors.secondary70} size={30} style={{
+                        position: 'static',
+                        top: 30,
+                        height: 1
+                    }} />
+                }
             />
 
 
