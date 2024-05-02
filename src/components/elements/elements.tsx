@@ -13,20 +13,32 @@ export const elementRendererMap = {
     at: At
 }
 
-export const elementToObject = (e: Element) => {
+interface ElementObject {
+    type: string,
+    children: ElementObject[],
+    [key: string]: any
+}
+
+export const elementToObject: (e: Element) => ElementObject = (e: Element) => {
     return {
         ...e.attrs,
         type: e.type,
-        child: e.children.map(elementToObject)
+        children: e.children.map(elementToObject)
     }
 }
 
-export const renderElement = (v: any) => (v.type in elementRendererMap)
-    ? React.createElement(elementRendererMap[v.type], {
-        ...v,
-        key: v.id
-    })
-    : <Text>不支持的 Element: {v.type} &nbsp; {JSON.stringify(v)} </Text>
+export const renderElement = (v: ElementObject) => {
+    if (v.type in elementRendererMap) {
+        const Renderer = elementRendererMap[v.type]
+        return <Renderer key={v.id} {...v} />
+    } else {
+        if (v.children && v.children.some(v=>v.type in elementRendererMap)) {
+            return renderElements(v.children)
+        } else {
+            return <Text>不支持的 Element: {v.type} &nbsp; {JSON.stringify(v)} </Text>
+        }
+    }
+}
 
 export const toPreviewString = (v: string | any) =>
     ((typeof v === 'string') ? Element.parse(v) : [v]).map(v => {
@@ -37,12 +49,12 @@ export const toPreviewString = (v: string | any) =>
         return '[未知]'
     }).join(' ')
 
-export const renderElements = (v: Element[]) => {
+export const renderElements = (v: ElementObject[]) => {
     const textElements = ['text', 'at']
 
     const result: {
         isText: boolean,
-        elements: Element[]
+        elements: ElementObject[]
     }[] = []
 
     for (const e of v) {
