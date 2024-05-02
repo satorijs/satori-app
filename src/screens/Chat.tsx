@@ -278,7 +278,7 @@ export const Chat = ({
         return () => {
             l.remove()
         }
-    }, [satori, messages])
+    }, [satori, messages, isPresentState])
 
     const setVisibleMessages = useStore(chatStore, v => v.setVisibleMessages)
 
@@ -318,6 +318,8 @@ export const Chat = ({
                 windowSize={8}
                 data={packedMessages}
                 inverted
+                onEndReachedThreshold={8}
+                onStartReachedThreshold={8}
                 keyExtractor={v => v.id}
                 onViewableItemsChanged={e => {
                     setVisibleMessages(e.viewableItems.map(v => v.index))
