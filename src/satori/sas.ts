@@ -23,7 +23,7 @@ export interface Contact {
   coverUserNick?: string
   coverUserId?: string
   coverMessage?: string
-  updateTime?: string
+  updateTime?: number
   parent?: string | undefined
   children?: string[] | undefined
 }

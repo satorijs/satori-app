@@ -147,10 +147,10 @@ export interface Methods {
     appLogin(platform: string, config: Dict): Promise<void>
     getContactList(next?: string): Promise<Contact[]>
     getLoginList(next?: string): Promise<List<Login>>
-    getMessageListSAS(channelId: string, 
+    getMessageListSAS(channelId: string,
         messageId?: string,
         direction?: 'up' | 'down',
-        ): Promise<Message[]>
+    ): Promise<Message[]>
     getLoginIter(): AsyncIterable<Login>
     getContactIter(): AsyncIterable<User>
     getMessagesIter(channelId: string): AsyncIterable<Message>
@@ -327,13 +327,24 @@ export const createAPI = (connectionInfo: ConnectionInfo, botInfo: BotInfo): Met
 
     // impl xxxxxIter from xxxxxList
     const createIter = (methodId: string) => {
-        return async function* (args: any) {
-            let next: string | undefined = undefined
-            do {
-                const { data, next: nextNext } = await callMethod(methodId, { ...args, next }) as any
-                next = nextNext
-                yield* data
-            } while (next)
+        const method = createMethod(methodId) as any
+        return (...args: any) => {
+            const res = (async function* () {
+                let next: string | undefined = undefined
+                while (true) {
+                    const { data, next: nextNext } = await method(...args, next)
+                    console.log('iter', data, next)
+                    for (const v of data) {
+                        yield v
+                    }
+                    if (!nextNext) {
+                        break
+                    }
+                    next = nextNext
+                }
+            })()
+            res[Symbol.asyncIterator] = () => res
+            return res
         }
     }
 
@@ -598,3 +609,5 @@ export interface WebSocket {
     addEventListener<K extends keyof WebSocket.EventMap>(type: K, listener: (event: WebSocket.EventMap[K]) => void): void
     removeEventListener<K extends keyof WebSocket.EventMap>(type: K, listener: (event: WebSocket.EventMap[K]) => void): void
 }
+
+export type SatoriEvent = Event

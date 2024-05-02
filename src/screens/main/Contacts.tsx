@@ -3,7 +3,7 @@ import { FlatList, View, RefreshControl, Pressable } from "react-native"
 import { ActivityIndicator, Avatar, Button, Text, TouchableRipple } from "react-native-paper"
 import { useContactInfo, useLogins, useSatori } from "../../globals/satori"
 import { useEffect, useMemo, useState } from "react"
-import { Event, Guild, List } from "../../satori/protocol"
+import { Event as SatoriEvent, Guild, List } from "../../satori/protocol"
 import { StackParamList } from "../../globals/navigator"
 import Element from "../../satori/element"
 import { toPreviewString } from "../../components/elements/elements"
@@ -27,12 +27,13 @@ export const Contacts = ({ navigation }: {
         contactInfo, setContactInfo
     } = useContactInfo()
 
-    
+
 
     const sortedContacts = useMemo(() => Object.values(contactInfo).sort((a, b) => {
         if (a.updateTime === undefined) return 1
         if (b.updateTime === undefined) return -1
-        return new Date(b.updateTime).getTime() - new Date(a.updateTime).getTime()
+        
+        return b.updateTime > a.updateTime ? 1 : -1
     }), [contactInfo])
 
     const [chosenLogin, setChosenLogin] = useState(login?.[0] ?? null)
@@ -47,6 +48,28 @@ export const Contacts = ({ navigation }: {
             setContactInfo(v)
         })
     }, [satori])
+
+    useEffect(() => {
+        const l = satori.addListener('message', (e: SatoriEvent) => {
+            if (e.type === 'message-created') {
+                console.log(e, e.channel.id)
+                if (!contactInfo.some(v => v.id === e.channel.id)) return
+                const contact = contactInfo.find(v => v.id === e.channel.id)
+                if (
+                    e.timestamp < contact.updateTime
+                ) return
+                contact.coverMessage = e.message.content
+                contact.coverUserId = e.message.user.id
+                contact.coverUserNick = e.message.user.nick || e.message.user.name || e.member?.name
+                contact.updateTime = e.timestamp
+                console.log(contact.updateTime)
+                console.log(e.message)
+                setContactInfo([...contactInfo])
+            }
+        })
+
+        return () => l.remove()
+    }, [satori, contactInfo])
 
     return <View style={{
         marginHorizontal: 30,
@@ -130,7 +153,7 @@ export const Contacts = ({ navigation }: {
                 </TouchableRipple>
             }}
             keyExtractor={(item) => item.id}
-            // ListFooterComponent={contactInfo.next && <ActivityIndicator />}
+        // ListFooterComponent={contactInfo.next && <ActivityIndicator />}
         />
     </View>
 }

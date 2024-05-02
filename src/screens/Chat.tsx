@@ -15,6 +15,7 @@ import Animated, { Easing, FadeIn, Keyframe, LinearTransition, getRelativeCoords
 import { LoginSelector } from "../components/LoginSelectorMenu";
 import { useConfigKey } from "../globals/config";
 import { BidirectionalFlatList } from "../components/bid-list";
+import { AutoMenu } from "../components/automenu";
 
 const MESSAGE_CTX_WINDOW_SIZE = 50
 
@@ -296,18 +297,53 @@ export const Chat = ({
             })}>
                 <View style={{
                     flexDirection: 'row',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    // justifyContent: 'center',
-                    gap: 10,
-                    paddingBottom: 10
                 }}>
-                    <Animated.Image source={{ uri: route.params.avatar }} style={{
-                        borderRadius: 20
-                    }} />
-                    <Text style={{
-                        fontSize: 19,
-                        fontWeight: '700'
-                    }}>{route.params.name}</Text>
+                    <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            // justifyContent: 'center',
+                            paddingBottom: 10,
+                            gap: 10
+                        }}>
+                        <Animated.Image source={{ uri: route.params.avatar }} style={{
+                            borderRadius: 20,
+                            width: 20,
+                            height: 20
+                        }} />
+                        <Animated.Text
+                            style={{
+                                fontSize: 19,
+                                fontWeight: '400'
+                            }}>{route.params.name}</Animated.Text>
+                    </View>
+                    <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingBottom: 10,
+                        gap: 10
+                    
+                    }}>
+                        <AutoMenu anchor={
+                            <Icon source='dots-horizontal' size={20} />
+                        }>
+
+                            <Menu.Item onPress={() => {
+                                navigation.navigate('Contact', {
+                                    platform: route.params.platform,
+                                    id: route.params.guildId,
+                                    name: route.params.name,
+                                    avatar: route.params.avatar
+                                })
+                            }} title="查看详情" />
+                            <Menu.Item onPress={() => {
+                                console.log('leave', route.params.guildId)
+                            }} title="退出群聊" />
+
+                        </AutoMenu>
+                    </View>
                 </View>
             </TouchableRipple>
             <BidirectionalFlatList
@@ -331,7 +367,7 @@ export const Chat = ({
                         route.params.channelId,
                         messages[messages.length - 1].id,
                         'up')
-                    setIsPresentState(false)
+                    // setIsPresentState(false)
                     setMessages([...messages, ...v])
                     setRefreshing(false)
                 }}
