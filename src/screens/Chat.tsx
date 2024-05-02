@@ -163,7 +163,7 @@ export const Chat = ({
     navigation, route
 }: {
     navigation: NavigationProp<StackParamList>,
-    route: RouteProp<StackParamList>
+    route: RouteProp<{ Chat: StackParamList['Chat'] }>
 }) => {
     const satori = useSatori()
     const [currentInput, setCurrentInput] = useState("");
@@ -176,9 +176,6 @@ export const Chat = ({
     const [replyTo, setReplyTo] = useState<SaMessage | null>(null)
 
     const [refreshing, setRefreshing] = useState(false)
-
-
-    const [loginSelectorVisible, setLoginSelectorVisible] = useState(false)
 
     const [mergeMessage] = useConfigKey('mergeMessage')
     const chatStore = useRef(createChatStore()).current
@@ -285,6 +282,7 @@ export const Chat = ({
             // )
             if (e?.message && e?.channel?.id === route.params.channelId) {
                 setMessages(v => {
+                    v ??= []
                     v.unshift(e.message)
                     return [...v]
                 })
@@ -304,33 +302,28 @@ export const Chat = ({
 
     return <ChatContext.Provider value={chatStore}>
         <View style={{ flex: 1, margin: 20 }}>
-            <Menu
-                visible={channelMenuVisible}
-                onDismiss={() => setChannelMenuVisible(false)}
-                anchor={
-                    <TouchableRipple onPress={() => setChannelMenuVisible(true)}>
-                        <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 10,
-                            paddingBottom: 10
-                        }}>
-                            <Avatar.Image source={{ uri: route.params.avatar }} size={30} />
-                            <Text style={{
-                                fontSize: 19,
-                                fontWeight: '700'
-                            }}>{route.params.name}</Text>
-                        </View>
-                    </TouchableRipple>
-                }>
-                <Menu.Item onPress={() => {
-                    // setMsgStore(msgStore => {
-                    //     msgStore[route.params.channelId] = []
-                    //     return { ...msgStore }
-                    // })
-                }} title="清除当前聊天数据" />
-            </Menu>
+            <TouchableRipple onPress={() => navigation.navigate('Contact', {
+                platform: route.params.platform,
+                id: route.params.guildId,
+                name: route.params.name,
+                avatar: route.params.avatar
+            })}>
+                <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    // justifyContent: 'center',
+                    gap: 10,
+                    paddingBottom: 10
+                }}>
+                    <Animated.Image source={{ uri: route.params.avatar }} style={{
+                        borderRadius: 20
+                    }} />
+                    <Text style={{
+                        fontSize: 19,
+                        fontWeight: '700'
+                    }}>{route.params.name}</Text>
+                </View>
+            </TouchableRipple>
             <FlatList
                 removeClippedSubviews
                 enableAutoscrollToTop
@@ -414,9 +407,7 @@ export const Chat = ({
                     flexDirection: 'row',
                     height: "auto"
                 }}>
-                    <Pressable onPress={() => {
-                        setLoginSelectorVisible(true)
-                    }} style={{
+                    <Pressable style={{
                         flexDirection: 'row',
                         alignItems: 'center',
                         alignContent: 'center',

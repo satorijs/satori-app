@@ -12,6 +12,12 @@ export type StackParamList = {
         avatar: string;
         platform: string;
     },
+    Contact: {
+        id: string;
+        name: string;
+        avatar: string;
+        platform: string;
+    },
 
     
     ConnectToSatori: undefined;

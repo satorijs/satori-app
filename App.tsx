@@ -25,6 +25,7 @@ import { ConnectToSatori } from './src/screens/connection/Satori';
 import { initConfigStore } from './src/globals/config';
 import { ConnectToDiscord } from './src/screens/connection/Discord';
 import { initUseLogins } from './src/globals/satori';
+import { Contact } from './src/screens/Contact';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
 
@@ -47,6 +48,10 @@ function App(): React.JSX.Element {
         <Stack.Screen
           name="Chat"
           component={Chat}
+        />
+        <Stack.Screen
+          name='Contact'
+          component={Contact}
         />
 
         {/* Connect for adaptors */}
