@@ -106,5 +106,15 @@ export const Config = () => {
             defaultValue={avatarType}
             setValue={setAvatarType}
             values={avatarTypeMap} />
+
+        <List.Item
+            style={{
+                marginLeft: 14
+            }}
+            left={() => <List.Icon icon='test-tube' />}
+            onPress={() => {
+                navigation.navigate('Test')
+            }}
+            title="测试页面" />
     </View>
 }

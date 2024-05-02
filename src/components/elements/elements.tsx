@@ -5,12 +5,14 @@ import Element from "../../satori/element"
 import React from "react";
 import { Text } from "react-native";
 import { At } from "./at";
+import Video from "./video";
 
 export const elementRendererMap = {
     img: Img,
     text: TextEle,
     quote: Quote,
-    at: At
+    at: At,
+    video: Video
 }
 
 interface ElementObject {

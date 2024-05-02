@@ -6,6 +6,7 @@ import { CameraRoll } from '@react-native-camera-roll/camera-roll'
 import Animated, { useSharedValue, withTiming } from "react-native-reanimated";
 import FastImage from 'react-native-fast-image'
 
+
 async function hasAndroidPermission() {
     const getCheckPermissionPromise = () => {
         if (Platform.Version as number >= 33) {
@@ -50,7 +51,7 @@ export const Img = ({ src }) => {
     const [width, setWidth] = useState(200)
     const [height, setHeight] = useState(100)
     const [visible, setIsVisible] = useState(false);
-
+    
     return <>
         <TouchableRipple onPress={() => setIsVisible(true)} style={{
             borderRadius: 15,

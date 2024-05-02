@@ -18,7 +18,7 @@ export type StackParamList = {
         avatar: string;
         platform: string;
     },
-
+    Test: undefined;
     
     ConnectToSatori: undefined;
     ConnectToDiscord: undefined;

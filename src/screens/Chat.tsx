@@ -163,6 +163,26 @@ Content ${inspect(content)}
     </View>
 })
 
+
+function ContactMenu(props) {
+    return (<AutoMenu anchor={<Icon source='dots-horizontal' size={20} />}>
+
+        <Menu.Item onPress={() => {
+            props.navigate('Contact', {
+                platform: props.params.platform,
+                id: props.params.guildId,
+                name: props.params.name,
+                avatar: props.params.avatar
+            });
+        }} title="查看详情" />
+        <Menu.Item onPress={() => {
+            console.log('leave', props.params.guildId);
+        }} title="退出群聊" />
+
+    </AutoMenu>);
+}
+
+
 export const Chat = ({
     navigation, route
 }: {
@@ -301,12 +321,12 @@ export const Chat = ({
                     alignItems: 'center',
                 }}>
                     <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            // justifyContent: 'center',
-                            paddingBottom: 10,
-                            gap: 10
-                        }}>
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        // justifyContent: 'center',
+                        paddingBottom: 10,
+                        gap: 10
+                    }}>
                         <Animated.Image source={{ uri: route.params.avatar }} style={{
                             borderRadius: 20,
                             width: 20,
@@ -324,25 +344,9 @@ export const Chat = ({
                         justifyContent: 'center',
                         paddingBottom: 10,
                         gap: 10
-                    
+
                     }}>
-                        <AutoMenu anchor={
-                            <Icon source='dots-horizontal' size={20} />
-                        }>
-
-                            <Menu.Item onPress={() => {
-                                navigation.navigate('Contact', {
-                                    platform: route.params.platform,
-                                    id: route.params.guildId,
-                                    name: route.params.name,
-                                    avatar: route.params.avatar
-                                })
-                            }} title="查看详情" />
-                            <Menu.Item onPress={() => {
-                                console.log('leave', route.params.guildId)
-                            }} title="退出群聊" />
-
-                        </AutoMenu>
+                        <ContactMenu navigate={navigation.navigate} params={route.params} />
                     </View>
                 </View>
             </TouchableRipple>

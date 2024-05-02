@@ -26,6 +26,7 @@ import { initConfigStore } from './src/globals/config';
 import { ConnectToDiscord } from './src/screens/connection/Discord';
 import { initUseLogins } from './src/globals/satori';
 import { Contact } from './src/screens/Contact';
+import Test from './src/screens/Test';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
 
@@ -52,6 +53,11 @@ function App(): React.JSX.Element {
         <Stack.Screen
           name='Contact'
           component={Contact}
+        />
+
+        <Stack.Screen
+          name='Test'
+          component={Test}
         />
 
         {/* Connect for adaptors */}
