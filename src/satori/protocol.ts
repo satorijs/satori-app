@@ -190,10 +190,10 @@ const httpCodeTips = new Proxy({
     get: (target, key) => target[key] || (key.toString().startsWith('5') && '服务器错误') || '未知错误'
 })
 
-const convertCamelToSnake = (str: string) => str.replace(/[A-Z]/g, c => `_${c.toLowerCase()}`)
-const convertSnakeToCamel = (str: string) => str.replace(/_./g, c => c[1].toUpperCase())
+export const convertCamelToSnake = (str: string) => str.replace(/[A-Z]/g, c => `_${c.toLowerCase()}`)
+export const convertSnakeToCamel = (str: string) => str.replace(/_./g, c => c[1].toUpperCase())
 
-const convertCamelObjectToSnake = (obj: object) => {
+export const convertCamelObjectToSnake = (obj: object) => {
     if (obj === null || typeof obj !== 'object') {
         return obj
     }
@@ -206,7 +206,7 @@ const convertCamelObjectToSnake = (obj: object) => {
     return newObj
 }
 
-const convertSnakeObjectToCamel = (obj: object) => {
+export const convertSnakeObjectToCamel = (obj: object) => {
     if (obj === null || typeof obj !== 'object') {
         return obj
     }

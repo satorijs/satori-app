@@ -1,6 +1,6 @@
 import EventEmitter from "react-native/Libraries/vendor/emitter/EventEmitter";
 import { AutoReconnectWebSocket } from "./auto-reconnect-ws";
-import { BotInfo, GatewayPayloadStructure, Login, Methods, Opcode, Event as SatoriEvent, createAPI } from "./protocol";
+import { BotInfo, GatewayPayloadStructure, Login, Methods, Opcode, Event as SatoriEvent, convertSnakeObjectToCamel, createAPI } from "./protocol";
 
 export const defaultConnectionInfo = {
     server: '',
@@ -64,7 +64,7 @@ export class SatoriConnection extends EventEmitter {
             }
 
             if(data.op === Opcode.READY) {
-                this.logins = data.body.logins;
+                this.logins = convertSnakeObjectToCamel(data.body.logins);
             }
         });
 

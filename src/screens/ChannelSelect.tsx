@@ -63,8 +63,8 @@ export const ChannelSelect = ({
                             <Icon size={20} source={
                                 item.type === 0 ? 'format-color-text' :
                                     item.type === 1 ? 'account' :
-                                        item.type === 2 ? 'format-list-bulleted-type' :
-                                            item.type === 3 ? 'account-tie-voice' : ''
+                                        item.type === 3 ? 'format-list-bulleted-type' :
+                                            item.type === 2 ? 'account-tie-voice' : ''
                             } />
                             <Text variant='titleMedium'>{item.name}</Text>
                         </View>
