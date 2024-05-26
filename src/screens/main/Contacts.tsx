@@ -48,7 +48,6 @@ export const Contacts = ({ navigation }: {
             platform: 'discord',
             selfId: '700602097824956437'
         }).getGuildList().then(v => {
-            console.log('vv')
             setContactInfo(v.data)
         }).catch(e=>{
             console.error(e)
