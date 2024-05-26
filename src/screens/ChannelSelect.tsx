@@ -39,6 +39,11 @@ export const ChannelSelect = ({
             channels ? <FlatList
                 data={channels}
                 renderItem={({ item }) => {
+                    if (item.type === 3) return <View>
+                        
+                        <Text variant='titleSmall'>{item.name}</Text>
+                    </View>
+
                     return <Pressable onPress={() => {
                         navigation.navigate('Chat', {
                             channelId: item.id,
@@ -56,10 +61,10 @@ export const ChannelSelect = ({
                             paddingVertical: 10
                         }}>
                             <Icon size={20} source={
-                                item.type === 0 ? 'format-color-text' : 
-                                item.type === 1 ? 'account' :
-                                item.type === 2 ? 'format-list-bulleted-type' :
-                                item.type === 3 ? 'account-tie-voice' : ''
+                                item.type === 0 ? 'format-color-text' :
+                                    item.type === 1 ? 'account' :
+                                        item.type === 2 ? 'format-list-bulleted-type' :
+                                            item.type === 3 ? 'account-tie-voice' : ''
                             } />
                             <Text variant='titleMedium'>{item.name}</Text>
                         </View>

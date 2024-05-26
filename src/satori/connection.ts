@@ -1,6 +1,6 @@
 import EventEmitter from "react-native/Libraries/vendor/emitter/EventEmitter";
 import { AutoReconnectWebSocket } from "./auto-reconnect-ws";
-import { BotInfo, GatewayPayloadStructure, Methods, Opcode, Event as SatoriEvent, createAPI } from "./protocol";
+import { BotInfo, GatewayPayloadStructure, Login, Methods, Opcode, Event as SatoriEvent, createAPI } from "./protocol";
 
 export const defaultConnectionInfo = {
     server: '',
@@ -42,6 +42,7 @@ export class SatoriConnection extends EventEmitter {
     connectionInfo: ConnectionInfo;
     lastId: number | null = null;
     private botCache = new Map<string, Methods>();
+    logins: Login[] = [];
     constructor(connectionInfo: ConnectionInfo) {
         super(null)
         if (!validateConnectionInfo(connectionInfo)) {
@@ -53,7 +54,6 @@ export class SatoriConnection extends EventEmitter {
 
         this.ws.onMessage((ev) => {
             const data: GatewayPayloadStructure<any> = JSON.parse(ev.data);
-            // console.log(data)
             if (data.op === Opcode.EVENT) {
                 const dataEvent = data as GatewayPayloadStructure<Opcode.EVENT>
                 if (dataEvent.body.id !== undefined) {
@@ -61,6 +61,10 @@ export class SatoriConnection extends EventEmitter {
                 }
                 // console.log(dataEvent.body.type)
                 this.emit('message', wrapInheritAll(data.body));
+            }
+
+            if(data.op === Opcode.READY) {
+                this.logins = data.body.logins;
             }
         });
 
