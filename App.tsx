@@ -27,6 +27,7 @@ import { ConnectToDiscord } from './src/screens/connection/Discord';
 import { initUseLogins } from './src/globals/satori';
 import { Contact } from './src/screens/Contact';
 import Test from './src/screens/Test';
+import { ChannelSelect } from './src/screens/ChannelSelect';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
 
@@ -58,6 +59,10 @@ function App(): React.JSX.Element {
         <Stack.Screen
           name='Test'
           component={Test}
+        />
+        <Stack.Screen
+          name='ChannelSelect'
+          component={ChannelSelect}
         />
 
         {/* Connect for adaptors */}

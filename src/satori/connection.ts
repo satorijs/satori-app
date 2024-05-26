@@ -88,8 +88,8 @@ export class SatoriConnection extends EventEmitter {
                 platform: info.platform,
                 id: info.selfId,
                 https: false,
-                server: '192.168.31.246:3453',
-                token: '0'
+                server: '192.168.31.246:6140/satori',
+                token: ''
             }, info));
         }
         return this.botCache.get(key);

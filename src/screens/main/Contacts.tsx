@@ -3,7 +3,7 @@ import { FlatList, View, RefreshControl, Pressable } from "react-native"
 import { ActivityIndicator, Avatar, Button, Text, TouchableRipple } from "react-native-paper"
 import { useContactInfo, useLogins, useSatori } from "../../globals/satori"
 import { useEffect, useMemo, useState } from "react"
-import { Event as SatoriEvent, Guild, List } from "../../satori/protocol"
+import { Event as SatoriEvent, Guild, List, asyncIterToArr } from "../../satori/protocol"
 import { StackParamList } from "../../globals/navigator"
 import Element from "../../satori/element"
 import { toPreviewString } from "../../components/elements/elements"
@@ -44,15 +44,21 @@ export const Contacts = ({ navigation }: {
 
     useEffect(() => {
         if (satori === null) return
-        satori.bot().getContactList().then(v => {
-            setContactInfo(v)
+        satori.bot({
+            platform: 'discord',
+            selfId: '700602097824956437'
+        }).getGuildList().then(v => {
+            console.log('vv')
+            setContactInfo(v.data)
+        }).catch(e=>{
+            console.error(e)
         })
     }, [satori])
 
     useEffect(() => {
         const l = satori.addListener('message', (e: SatoriEvent) => {
             if (e.type === 'message-created') {
-                console.log(e, e.channel.id)
+                // console.log(e, e.channel.id)
                 if (!contactInfo.some(v => v.id === e.channel.id)) return
                 const contact = contactInfo.find(v => v.id === e.channel.id)
                 if (
@@ -62,8 +68,8 @@ export const Contacts = ({ navigation }: {
                 contact.coverUserId = e.message.user.id
                 contact.coverUserNick = e.message.user.nick || e.message.user.name || e.member?.name
                 contact.updateTime = e.timestamp
-                console.log(contact.updateTime)
-                console.log(e.message)
+                // console.log(contact.updateTime)
+                // console.log(e.message)
                 setContactInfo([...contactInfo])
             }
         })
@@ -104,9 +110,14 @@ export const Contacts = ({ navigation }: {
             refreshControl={
                 <RefreshControl refreshing={refreshing} onRefresh={() => {
                     setRefreshing(true)
-                    satori.bot().getContactList().then(v => {
-                        setContactInfo(v)
-                        setRefreshing(false)
+                    satori.bot({
+                        platform: 'discord',
+                        selfId: '700602097824956437'
+                    }).getGuildList().then(v => {
+                        console.log('vv')
+                        setContactInfo(v.data)
+                    }).catch(e=>{
+                        console.error(e)
                     })
                 }} />
             }
@@ -117,13 +128,10 @@ export const Contacts = ({ navigation }: {
                 const lastUsername = (item.coverUserNick || item.coverUserName) ?? item.coverUserId
 
                 return <TouchableRipple onPress={async () => {
-                    const guild = await satori.bot(chosenLogin).getChannelList(item.id)
-                    navigation.navigate('Chat', {
+                    navigation.navigate('ChannelSelect', {
                         guildId: item.id,
-                        channelId: guild.data[0].id,
-                        name: item.name ?? item.id,
-                        avatar: item.avatar,
-                        platform: item.platform
+                        guildName: item.name,
+                        avatar: item.avatar
                     })
                 }}>
                     <View style={{

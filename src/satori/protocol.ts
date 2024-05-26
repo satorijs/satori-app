@@ -2,7 +2,7 @@ import { Alert } from 'react-native'
 import { ConnectionInfo } from './connection'
 import Element from './element'
 import { Dict } from 'cosmokit'
-import { Contact } from './sas'
+// import { Contact } from './sas'
 
 export interface SendOptions {
     linkPreview?: boolean
@@ -37,7 +37,7 @@ export const Methods: Dict<Method> = {
     'message.update': Method('editMessage', ['channel_id', 'message_id', 'content']),
     'message.delete': Method('deleteMessage', ['channel_id', 'message_id']),
     'message.get': Method('getMessage', ['channel_id', 'message_id']),
-    'message.list': Method('getMessageList', ['channel_id', 'next']),
+    'message.list': Method('getMessageList', ['channel_id', 'next', 'direction', 'limit', 'order']),
 
     'reaction.create': Method('createReaction', ['channel_id', 'message_id', 'emoji']),
     'reaction.delete': Method('deleteReaction', ['channel_id', 'message_id', 'emoji', 'user_id']),
@@ -68,15 +68,21 @@ export const Methods: Dict<Method> = {
     'friend.approve': Method('handleFriendRequest', ['message_id', 'approve', 'comment']),
     'guild.approve': Method('handleGuildRequest', ['message_id', 'approve', 'comment']),
     'guild.member.approve': Method('handleGuildMemberRequest', ['message_id', 'approve', 'comment']),
-    'app/contact.get': Method('getContactList', []),
-    'app/login.list': Method('getLoginList', ['next']),
-    'app/login': Method('appLogin', ['platform', 'config']),
-    'app/message.get': Method('getMessageListSAS', ['channel_id', 'message_id', 'direction']),
+    // 'app/contact.get': Method('getContactList', []),
+    // 'app/login.list': Method('getLoginList', ['next']),
+    // 'app/login': Method('appLogin', ['platform', 'config']),
+    // 'app/message.get': Method('getMessageListSAS', ['channel_id', 'message_id', 'direction']),
 }
 
 export interface List<T> {
     data: T[]
     next?: string
+}
+
+export interface BidiList<T> {
+    data: T[]
+    next?: string
+    prev?: string
 }
 
 export interface Methods {
@@ -85,8 +91,7 @@ export interface Methods {
     sendMessage(channelId: string, content: Element.Fragment, guildId?: string, options?: SendOptions): Promise<string[]>
     sendPrivateMessage(userId: string, content: Element.Fragment, guildId?: string, options?: SendOptions): Promise<string[]>
     getMessage(channelId: string, messageId: string): Promise<Message>
-    getMessageList(channelId: string, next?: string): Promise<List<Message>>
-    getMessageIter(channelId: string): AsyncIterable<Message>
+    getMessageList(channelId: string, next?: string, direction?: 'before' | 'after' | 'around', limit?: number, order?: 'asc' | 'desc'): Promise<BidiList<Message>>
     editMessage(channelId: string, messageId: string, content: Element.Fragment): Promise<void>
     deleteMessage(channelId: string, messageId: string): Promise<void>
 
@@ -144,16 +149,16 @@ export interface Methods {
     updateCommands(commands: Command[]): Promise<void>
 
     // SAS
-    appLogin(platform: string, config: Dict): Promise<void>
-    getContactList(next?: string): Promise<Contact[]>
-    getLoginList(next?: string): Promise<List<Login>>
-    getMessageListSAS(channelId: string,
-        messageId?: string,
-        direction?: 'up' | 'down',
-    ): Promise<Message[]>
-    getLoginIter(): AsyncIterable<Login>
-    getContactIter(): AsyncIterable<User>
-    getMessagesIter(channelId: string): AsyncIterable<Message>
+    // appLogin(platform: string, config: Dict): Promise<void>
+    // getContactList(next?: string): Promise<Contact[]>
+    // getLoginList(next?: string): Promise<List<Login>>
+    // getMessageListSAS(channelId: string,
+    //     messageId?: string,
+    //     direction?: 'up' | 'down',
+    // ): Promise<Message[]>
+    // getLoginIter(): AsyncIterable<Login>
+    // getContactIter(): AsyncIterable<User>
+    // getMessagesIter(channelId: string): AsyncIterable<Message>
 }
 
 export const asyncIterToArr = async <T>(iter: AsyncIterable<T>) => {
@@ -247,6 +252,7 @@ class SatoriError extends Error {
 }
 
 const satoriError = (message: string) => {
+    console.error('SatoriError:', message)
     throw new SatoriError(message)
 }
 

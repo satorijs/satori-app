@@ -8,7 +8,8 @@ export type StackParamList = {
     Chat: {
         channelId: string;
         guildId: string;
-        name: string;
+        channelName: string;
+        guildName: string;
         avatar: string;
         platform: string;
     },
@@ -22,6 +23,12 @@ export type StackParamList = {
     
     ConnectToSatori: undefined;
     ConnectToDiscord: undefined;
+
+    ChannelSelect: {
+        guildId: string;
+        guildName: string;
+        avatar: string;
+    }
 }
 
 export const Stack = createNativeStackNavigator<StackParamList>();

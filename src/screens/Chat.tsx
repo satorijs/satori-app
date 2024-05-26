@@ -62,6 +62,7 @@ const Message = memo(({ message, curLogin, index }: { message: SaMessage & Group
 
     const store = useContext(ChatContext)
     const setReplyTo = useStore(store, v => v.setReplyTo)
+    const replyTo = useStore(store, v => v.replyTo)
 
     const [bubbleType, setBubbleType] = useConfigKey('bubbleType')
     const [avatarType, setAvatarType] = useConfigKey('avatarType')
@@ -188,14 +189,21 @@ export const Chat = ({
 
     // 越往后越老
     const [messages, setMessages] = useState<SaMessage[]>(null);
+    const [messagesToken, setMessagesToken] = useState<{
+        prev: string,
+        next: string
+    }>({
+        prev: null,
+        next: null
+    })
     const [isPresentState, setIsPresentState] = useState(true)
 
-    const [replyTo, setReplyTo] = useState<SaMessage | null>(null)
-
+    
     const [refreshing, setRefreshing] = useState(false)
-
+    
     const [mergeMessage] = useConfigKey('mergeMessage')
     const chatStore = useRef(createChatStore()).current
+    const [replyTo, setReplyTo] = useStore(chatStore, v => [v.replyTo, v.setReplyTo])
     const { contactInfo } = useContactInfo()
     const currentContact = useMemo(() =>
         contactInfo.find(v => v.id === route.params.channelId &&
@@ -205,14 +213,15 @@ export const Chat = ({
 
     const allLogins = useLogins()
     const logins = useMemo(() => {
+        return allLogins
         if (!currentContact) return []
         return allLogins.filter(v =>
-            v.platform === route.params.platform &&
-            currentContact?.whoIsHere.includes?.(v.selfId)
+            v.platform === route.params.platform
+            && currentContact?.whoIsHere.includes?.(v.selfId)
         )
     },
         [allLogins, route.params.platform, currentContact])
-    const [curLogin, setChosenLogin] = useState(logins?.[0] ?? null)
+    const [curLogin, setChosenLogin] = [logins?.[0], () => { }]//useState(logins?.[0] ?? null)
 
     const mergeMessages = (msgs: SaMessage[]) => {
         const newMsgs = []
@@ -271,10 +280,16 @@ export const Chat = ({
     }, [mergedMessages])
 
     useEffect(() => {
-        satori.bot(curLogin).getMessageListSAS(route.params.channelId, null, 'up').then(v => {
-            setMessages(v)
-        })
-    }, [mergeMessage])
+        console.log(logins)
+        if (curLogin)
+            satori.bot(curLogin).getMessageList(route.params.channelId, undefined, undefined, 20, 'desc').then(v => {
+                setMessages(v.data)
+                setMessagesToken({
+                    prev: v.prev,
+                    next: v.next
+                })
+            })
+    }, [mergeMessage, curLogin])
 
     useEffect(() => {
         if (!satori) return
@@ -305,7 +320,7 @@ export const Chat = ({
             <TouchableRipple onPress={() => navigation.navigate('Contact', {
                 platform: route.params.platform,
                 id: route.params.guildId,
-                name: route.params.name,
+                name: route.params.guildName,
                 avatar: route.params.avatar
             })}>
                 <View style={{
@@ -329,7 +344,7 @@ export const Chat = ({
                             style={{
                                 fontSize: 19,
                                 fontWeight: '400'
-                            }}>{route.params.name}</Animated.Text>
+                            }}>{route.params.channelName}</Animated.Text>
                     </View>
                     <View style={{
                         flexDirection: 'row',
@@ -360,33 +375,33 @@ export const Chat = ({
                 refreshing={refreshing}
                 onEndReached={async () => {
                     setRefreshing(true)
-                    const v = await satori.bot(curLogin).getMessageListSAS(
-                        route.params.channelId,
-                        messages[messages.length - 1].id,
-                        'up')
-                    // setIsPresentState(false)
-                    setMessages([...messages, ...v])
-                    setRefreshing(false)
+                    await satori.bot(curLogin).getMessageList(route.params.channelId, messagesToken.prev, 'before', 10, 'desc').then(v => {
+                        setMessages([...messages, ...v.data])
+                        setMessagesToken({
+                            prev: v.prev,
+                            next: v.next
+                        })
+                    }).finally(() => {
+                        setRefreshing(false)
+                    })
+
+                    // setRefreshing(true)
+                    // const v = await satori.bot(curLogin).getMessageList(
+                    //     route.params.channelId,
+                    //     messages[messages.length - 1].id,
+                    //     'up')
+                    // // setIsPresentState(false)
+                    // setMessages([...messages, ...v])
+                    // setRefreshing(false)
                 }}
                 onStartReached={async () => {
-                    setRefreshing(true)
-                    const v = await satori.bot(curLogin).getMessageListSAS(
-                        route.params.channelId,
-                        messages[0].id,
-                        'down')
 
-                    setRefreshing(false)
-                    if (v.length === 0) {
-                        setIsPresentState(true)
-                        return
-                    }
-                    setMessages([...v, ...messages])
                 }}
                 style={{
                     flex: 1
                 }}
                 renderItem={({ item, index }) =>
-                    <Message message={item} curLogin={curLogin} index={index} />}
+                    <Message message={item} curLogin={curLogin} index={index} key={item.id} />}
 
                 onScroll={(e) => {
                     // console.log('scroll', e.nativeEvent.contentOffset.y)

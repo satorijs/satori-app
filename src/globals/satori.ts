@@ -18,9 +18,9 @@ export const useSatori = () => {
     if (connection === null) {
         setConnection(new SatoriConnection({
             https: false,
-            server: '192.168.31.246:3453',
-            platform: '0',
-            id: '0',
+            server: '192.168.31.246:6140/satori',
+            platform: 'discord',
+            id: 'microblock.cc',
             token: '0'
         }))
     }
@@ -36,18 +36,7 @@ const _useLogin = create<{
 }))
 
 export const useLogins = () => {
-    const satori = useSatori()
     const { login, setLogin } = _useLogin()
-    useEffect(() => {
-        if (satori === null || login !== null) return
-        console.log('get login')
-        asyncIterToArr(satori.bot().getLoginIter()).then(v => {
-            console.log('get login', v)
-            setLogin(v)
-        })
-    }, [satori])
-
-
 
     return login
 }
@@ -58,19 +47,35 @@ export const initUseLogins = () => {
     useEffect(() => {
         if (satori === null) return
         const l = satori.addListener('message', (evt: SatoriEvent) => {
-            console.log('message', evt.type)
+            // console.log('message', evt.type)
             if (evt.type === 'login-added') {
                 asyncIterToArr(satori.bot().getLoginIter()).then(v => {
-                    console.log('get login', v)
+                    // console.log('get login', v)
                     setLogin(v)
                 })
             }
         })
 
         return () => {
-            console.log('remove listener')
+            // console.log('remove listener')
             l.remove()
         }
+    }, [satori])
+
+    useEffect(() => {
+        if (satori === null || login !== null) return
+        console.log('get login')
+        satori.bot({
+            platform: 'discord',
+            selfId: '700602097824956437'
+        }).getLogin().then(v => {
+            console.log('get login', v)
+            setLogin([v])
+        })
+        // asyncIterToArr(satori.bot().getLoginIter()).then(v => {
+        //     console.log('get login', v)
+        //     setLogin(v)
+        // })
     }, [satori])
 }
 
