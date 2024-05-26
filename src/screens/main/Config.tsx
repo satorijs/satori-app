@@ -115,6 +115,15 @@ export const Config = () => {
             onPress={() => {
                 navigation.navigate('Test')
             }}
-            title="测试页面" />
+            title="组件测试页面" />
+        <List.Item
+            style={{
+                marginLeft: 14
+            }}
+            left={() => <List.Icon icon='test-tube' />}
+            onPress={() => {
+                navigation.navigate('Debug')
+            }}
+            title="调试页" />
     </View>
 }
