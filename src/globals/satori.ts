@@ -42,40 +42,6 @@ export const useLogins = () => {
 
 export const initUseLogins = () => {
     
-    // const { login, setLogin } = _useLogin()
-    // useEffect(() => {
-    //     if (satori === null) return
-    //     const l = satori.addListener('message', (evt: SatoriEvent) => {
-    //         // console.log('message', evt.type)
-    //         if (evt.type === 'login-added') {
-    //             asyncIterToArr(satori.bot().getLoginIter()).then(v => {
-    //                 // console.log('get login', v)
-    //                 setLogin(v)
-    //             })
-    //         }
-    //     })
-
-    //     return () => {
-    //         // console.log('remove listener')
-    //         l.remove()
-    //     }
-    // }, [satori])
-
-    // useEffect(() => {
-    //     if (satori === null || login !== null) return
-    //     console.log('get login')
-    //     satori.bot({
-    //         platform: 'discord',
-    //         selfId: '700602097824956437'
-    //     }).getLogin().then(v => {
-    //         console.log('get login', v)
-    //         setLogin([v])
-    //     })
-    //     // asyncIterToArr(satori.bot().getLoginIter()).then(v => {
-    //     //     console.log('get login', v)
-    //     //     setLogin(v)
-    //     // })
-    // }, [satori])
 }
 
 

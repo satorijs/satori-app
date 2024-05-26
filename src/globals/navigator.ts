@@ -21,6 +21,9 @@ export type StackParamList = {
     },
     Test: undefined;
     Debug: undefined;
+    Webview: {
+        url: string;
+    };
     
     ConnectToSatori: undefined;
     ConnectToDiscord: undefined;

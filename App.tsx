@@ -29,6 +29,7 @@ import { Contact } from './src/screens/Contact';
 import Test from './src/screens/Test';
 import { ChannelSelect } from './src/screens/ChannelSelect';
 import { Debug } from './src/screens/Debug';
+import { Webview } from './src/screens/WebView';
 
 const { LightTheme, DarkTheme: DarkThemeA } = adaptNavigationTheme({ reactNavigationLight: DefaultTheme, reactNavigationDark: DarkTheme });
 
@@ -68,6 +69,10 @@ function App(): React.JSX.Element {
         <Stack.Screen
           name='ChannelSelect'
           component={ChannelSelect}
+        />
+        <Stack.Screen
+          name='Webview'
+          component={Webview}
         />
 
         {/* Connect for adaptors */}

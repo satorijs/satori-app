@@ -125,5 +125,16 @@ export const Config = () => {
                 navigation.navigate('Debug')
             }}
             title="调试页" />
+        <List.Item
+            style={{
+                marginLeft: 14
+            }}
+            left={() => <List.Icon icon='test-tube' />}
+            onPress={() => {
+                navigation.navigate('Webview', {
+                    url: 'http://192.168.31.246:6140'
+                })
+            }}
+            title="Satori 控制台" />
     </View>
 }

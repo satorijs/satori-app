@@ -64,7 +64,7 @@ export class SatoriConnection extends EventEmitter {
             }
 
             if(data.op === Opcode.READY) {
-                this.logins = convertSnakeObjectToCamel(data.body.logins);
+                this.logins = convertSnakeObjectToCamel(data.body.logins) as any;
             }
         });
 
